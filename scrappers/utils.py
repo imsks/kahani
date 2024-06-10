@@ -3,26 +3,15 @@ from bs4 import BeautifulSoup
 import requests
 from utils.api import APIUtils
 
-# Scrap Class
+# Scrap Celebs
 class ScrapeCeleb:
-    def __init__(self, query, role):
-        self.query = query
-        self.role = role
-
     # Init Scrapping
-    def init_scrapping(self):
-        pre_scrapper = SearchIMDB(self.query)
-
-        response = pre_scrapper.make_imdb_suggestion_api()
-
-        parsed_celeb = self.parse_imdb_suggestions(response)
-
-        scrapped_celeb_details = self.scrape_celeb_details(parsed_celeb['id'])
+    def init_scrapping(self, celeb_id):
+        scrapped_celeb_details = self.scrape_celeb_details(celeb_id)
 
         celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
-            "celeb_name": parsed_celeb['l'],
             "celeb_filmography": celeb_filmography,
         }
     
@@ -113,6 +102,7 @@ class ScrapeCeleb:
             "ratings": ratings
         }
 
+# Search IMDB
 class SearchIMDB:
     def __init__(self, query):
         self.query = query
@@ -174,5 +164,7 @@ class SearchIMDB:
                     "year": suggestion.get('y', ''),
                 }
             )
+
+        # scraped_celeb_details = ScrapeCeleb().init_scrapping(mapped_query_suggestions[0]['id'])
 
         return mapped_query_suggestions
