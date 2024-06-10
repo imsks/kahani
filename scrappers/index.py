@@ -1,9 +1,11 @@
-from utils import ScrapeCeleb
+from .utils import SearchIMDB
 
-class Scrapper:
+class Search:
     def __init__(self, query):
         self.query = query
 
-    def init_scrapping(self):
+    def get_query_suggestions(self):
         # Scrape the celeb details
-        celeb = ScrapeCeleb(self.query, self)
+        query_suggestions = SearchIMDB(self.query).fetch_query_suggestions()
+
+        return query_suggestions

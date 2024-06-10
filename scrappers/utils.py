@@ -1,8 +1,7 @@
 import json
 from bs4 import BeautifulSoup
-from matplotlib import pyplot as plt
-import pandas as pd
 import requests
+from utils.api import APIUtils
 
 # Scrap Class
 class ScrapeCeleb:
@@ -12,22 +11,19 @@ class ScrapeCeleb:
 
     # Init Scrapping
     def init_scrapping(self):
-        scrapper_utils = ScrapperUtils(self.query)
+        pre_scrapper = SearchIMDB(self.query)
 
-        response = scrapper_utils.make_imdb_suggestion_api()
+        response = pre_scrapper.make_imdb_suggestion_api()
 
-        parsed_celeb = self.parse_imdb_suggestion_response(response)
+        parsed_celeb = self.parse_imdb_suggestions(response)
 
         scrapped_celeb_details = self.scrape_celeb_details(parsed_celeb['id'])
 
         celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
 
-        df = pd.DataFrame(celeb_filmography[self.role])
-
         return {
             "celeb_name": parsed_celeb['l'],
             "celeb_filmography": celeb_filmography,
-            "df": df
         }
     
     # Build celeb URL
@@ -36,25 +32,10 @@ class ScrapeCeleb:
         
         return url
     
-    # Parse IMDB Suggestion API Response
-    def parse_imdb_suggestion_response(self, api_response, index = 0):
-        if "d" not in api_response:
-            return None  # Handle invalid response (missing "d" key)
-
-        # Get the list of suggestions from the "d" key
-        suggestions = api_response["d"]
-        
-        # Check if there are any suggestions
-        if not suggestions:
-            return None  # No suggestions found
-
-        # Return the first suggestion (assuming the list is not empty)
-        return suggestions[index]
-    
     # Scrape celeb Details
     def scrape_celeb_details(self, celeb_id):
         url = self.build_celeb_url(celeb_id)
-        response = self.make_api(url)
+        response = APIUtils.make_api(url)
         
         return response.content
     
@@ -132,33 +113,10 @@ class ScrapeCeleb:
             "ratings": ratings
         }
 
-class ScrapperUtils:
+class SearchIMDB:
     def __init__(self, query):
         self.query = query
-
-    # Call the API
-    def make_api(self, url):
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        }
-
-        return requests.get(url, headers=headers)
-
-    # Check Response
-    def check_response(self, response):
-        if response.status_code == 200:
-            return json.loads(response.content)
-        else:
-            print("Error: ", response.status_code)
-            return None
         
-    # Make IMDB Suggestion API
-    def make_imdb_suggestion_api(self):
-        url = self.build_imdb_suggestion_url()
-        response = self.make_api(url)
-        
-        return self.check_response(response)
-    
     # Build IMDB Suggestion URL
     def build_imdb_suggestion_url(self):
         # Encode the search query for safe inclusion in the URL
@@ -171,3 +129,50 @@ class ScrapperUtils:
         url = base_url + encoded_query + ".json" + "?includeVideos=1"
         
         return url
+    
+    # Make IMDB Suggestion API
+    def make_imdb_suggestion_api(self):
+        url = self.build_imdb_suggestion_url()
+        response = APIUtils.make_api(url)
+        
+        return APIUtils.check_response(response)
+    
+    # Parse IMDB Suggestion API Response
+    def parse_imdb_suggestions(self, api_response):
+        if "d" not in api_response:
+            return None  # Handle invalid response (missing "d" key)
+
+        # Get the list of suggestions from the "d" key
+        suggestions = api_response["d"]
+        
+        # Check if there are any suggestions
+        if not suggestions:
+            return None  # No suggestions found
+
+        # Return the first suggestion (assuming the list is not empty)
+        return suggestions
+    
+    # Fetch Query Suggestions
+    def fetch_query_suggestions(self):
+        response = self.make_imdb_suggestion_api()
+
+        query_suggestions = self.parse_imdb_suggestions(response)
+
+        if not query_suggestions:
+            return []
+        
+        mapped_query_suggestions = []
+
+        for suggestion in query_suggestions:
+            mapped_query_suggestions.append(
+                {
+                    "id": suggestion.get('id', ''),
+                    "name": suggestion.get('l', ''),
+                    "image": suggestion.get('i', {}).get('imageUrl', None),
+                    "type": suggestion.get('q', ''),
+                    "typeId": suggestion.get('qid', ''), 
+                    "year": suggestion.get('y', ''),
+                }
+            )
+
+        return mapped_query_suggestions

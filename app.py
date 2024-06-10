@@ -2,6 +2,7 @@ import traceback
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from database.models import celeb
+from utils.api import APIUtils
 
 app = Flask(__name__)
 
@@ -16,16 +17,18 @@ def init_db():
         db.create_all()
         print("Database initialized")
 
-@app.route('/scrape', methods=['POST'])
+@app.route('/search', methods=['POST'])
 def scrape():
     try:
         data = request.get_json()
-        print(data)
-        from scrappers import scrape_celeb
-        celeb_data = scrape_celeb()
-        return jsonify(celeb_data)
+        query = data['query']
+
+        from scrappers.index import Search
+        scrapped_data = Search(query)
+
+        return APIUtils.generate_response(data=scrapped_data.get_query_suggestions())
     except Exception as e:
-        print(traceback.format_exc())
+        print(traceback.print_exc())
         return jsonify({"error": str(e)})
 
 if __name__ == '__main__':
