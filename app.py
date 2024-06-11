@@ -1,7 +1,7 @@
 import traceback
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from database.models import celeb
+from controllers.search import Search
 from utils.api import APIUtils
 
 app = Flask(__name__)
@@ -23,7 +23,6 @@ def scrape():
         data = request.get_json()
         query = data['query']
 
-        from scrappers.index import Search
         scrapped_data = Search(query)
 
         return APIUtils.generate_response(data=scrapped_data.get_query_suggestions())
