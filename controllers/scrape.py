@@ -9,9 +9,9 @@ class Scrape:
         self.type = type
 
     def init_scrapping(self):
-        if self.type == SearchItemType.Movie.value:
+        if self.type == SearchItemType.MOVIE.value:
             return None
-        elif self.type == SearchItemType.Celeb.value:
+        elif self.type == SearchItemType.CELEB.value:
             return ScrapeCeleb(self.id).init_scrapping()
         else:
             return {
@@ -25,9 +25,7 @@ class ScrapeCeleb:
         
     # Init Scrapping
     def init_scrapping(self):
-        print("HERE", 1)
         scrapped_celeb_details = self.scrape_celeb_details()
-        print("HERE", scrapped_celeb_details)
         celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
@@ -36,7 +34,6 @@ class ScrapeCeleb:
     
     # Build celeb URL
     def build_celeb_url(self):
-        print("HERE", type(self.id))
         url = "https://www.imdb.com/name/" + self.id
         
         return url
@@ -45,7 +42,6 @@ class ScrapeCeleb:
     def scrape_celeb_details(self):
         url = self.build_celeb_url()
         response = APIUtils.make_api(url)
-        print("HERE", response)
         
         return response.content
     
@@ -56,69 +52,56 @@ class ScrapeCeleb:
         all_writer_elements = soup.find('div', id='accordion-item-writer-previous-projects')
         all_producer_elements = soup.find('div', id='accordion-item-producer-previous-projects')
         all_director_elements = soup.find('div', id='accordion-item-director-previous-projects')
+        all_actor_elements = soup.find('div', id='accordion-item-actor-previous-projects')
 
         writer_films = self.process_film_details(all_writer_elements)
         producer_films = self.process_film_details(all_producer_elements)
         director_films = self.process_film_details(all_director_elements)
+        actor_films = self.process_film_details(all_actor_elements)
 
         return {
             "writer": writer_films,
             "producer": producer_films,
-            "director": director_films
+            "director": director_films,
+            "actor": actor_films
         }
 
     # Process Film Details
     def process_film_details(self, all_films_element):
-        if not all_films_element:
-            return {
-                "titles": [],
-                "links": [],
-                "covers": [],
-                "ratings": []
-            }
+        films = []
 
-        titles = []
-        links = []
-        covers = []
-        ratings = []
+        if not all_films_element:
+            return films
 
         film_elements = all_films_element.find_all('li')
 
         for film_element in film_elements:
             link = film_element.find('a', class_='ipc-metadata-list-summary-item__t')
 
+            film  = {}
+
             if link:
                 title  = link.text.strip()
-                titles.append(title)
+                film['title'] = title
 
                 anchor = link.get('href').split('?')[0]
                 if anchor:
-                    links.append(anchor)
+                    film['link'] = anchor
 
                 rating = film_element.find('span', class_='ipc-rating-star')
 
                 if rating:
-                    ratings.append(rating.text.strip())
+                    film['rating'] = rating.text.strip()
                 else:
-                    ratings.append("") 
+                    film['rating'] = ""
 
                 cover = film_element.find('img', class_='ipc-image')
 
                 if cover:
-                    covers.append(cover.get('src'))
+                    film['cover'] = cover.get('src')
                 else:
-                    covers.append("") 
+                    film['cover'] = ""
+                    
+                films.append(film)
 
-        # Find the maximum length of any list
-        max_length = max(len(lst) for lst in [titles, links, covers, ratings])
-
-        # Pad shorter lists with empty strings
-        for lst in [titles, links, covers, ratings]:
-            lst.extend([""] * (max_length - len(lst)))
-
-        return {
-            "titles": titles,
-            "links": links,
-            "covers": covers,
-            "ratings": ratings
-        }
+        return films

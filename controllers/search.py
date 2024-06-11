@@ -70,13 +70,13 @@ class SearchIMDB:
             is_valid = False
 
             if suggestion.get('qid', '') == '':
-                type = SearchItemType.Celeb.value
+                type = SearchItemType.CELEB.value
                 is_valid = True
             elif suggestion.get('qid', '') == 'tvSeries':
                 type = SearchItemType.TV_SHOW.value
                 is_valid = True
             elif suggestion.get('qid', '') == 'movie':
-                type = SearchItemType.Movie.value
+                type = SearchItemType.MOVIE.value
                 is_valid = True
 
             if is_valid:

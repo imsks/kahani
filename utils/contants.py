@@ -1,6 +1,12 @@
 from enum import Enum
 
 class SearchItemType(Enum):
-    Movie = "Movie"
+    MOVIE = "Movie"
     TV_SHOW = "TV Show"
-    Celeb = "Celeb"
+    CELEB = "Celeb"
+
+class CelebRoles(Enum):
+    WRITER = "Writer"
+    PRODUCER = "Producer"
+    DIRECTOR = "Director"
+    ACTOR = "Actor"
