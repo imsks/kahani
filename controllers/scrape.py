@@ -1,12 +1,33 @@
+from utils.api import APIUtils
 from bs4 import BeautifulSoup
 from utils.api import APIUtils
+from utils.contants import SearchItemType
+
+class Scrape:
+    def __init__(self, id, type):
+        self.id = id
+        self.type = type
+
+    def init_scrapping(self):
+        if self.type == SearchItemType.Movie.value:
+            return None
+        elif self.type == SearchItemType.Celeb.value:
+            return ScrapeCeleb(self.id).init_scrapping()
+        else:
+            return {
+                "error": "Invalid type"
+            }
 
 # Scrap Celebs
 class ScrapeCeleb:
+    def __init__(self, id):
+        self.id = id
+        
     # Init Scrapping
-    def init_scrapping(self, celeb_id):
-        scrapped_celeb_details = self.scrape_celeb_details(celeb_id)
-
+    def init_scrapping(self):
+        print("HERE", 1)
+        scrapped_celeb_details = self.scrape_celeb_details()
+        print("HERE", scrapped_celeb_details)
         celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
@@ -14,15 +35,17 @@ class ScrapeCeleb:
         }
     
     # Build celeb URL
-    def build_celeb_url(self, celeb_id):
-        url = "https://www.imdb.com/name/" + celeb_id
+    def build_celeb_url(self):
+        print("HERE", type(self.id))
+        url = "https://www.imdb.com/name/" + self.id
         
         return url
     
     # Scrape celeb Details
-    def scrape_celeb_details(self, celeb_id):
-        url = self.build_celeb_url(celeb_id)
+    def scrape_celeb_details(self):
+        url = self.build_celeb_url()
         response = APIUtils.make_api(url)
+        print("HERE", response)
         
         return response.content
     

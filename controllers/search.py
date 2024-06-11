@@ -1,6 +1,7 @@
 import requests
 
 from utils.api import APIUtils
+from utils.contants import SearchItemType
 
 class Search:
     def __init__(self, query):
@@ -69,13 +70,13 @@ class SearchIMDB:
             is_valid = False
 
             if suggestion.get('qid', '') == '':
-                type = 'Celeb'
+                type = SearchItemType.Celeb.value
                 is_valid = True
             elif suggestion.get('qid', '') == 'tvSeries':
-                type = 'TV Show'
+                type = SearchItemType.TV_SHOW.value
                 is_valid = True
             elif suggestion.get('qid', '') == 'movie':
-                type = 'Movie'
+                type = SearchItemType.Movie.value
                 is_valid = True
 
             if is_valid:

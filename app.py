@@ -1,6 +1,7 @@
 import traceback
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from controllers.scrape import Scrape
 from controllers.search import Search
 from utils.api import APIUtils
 
@@ -18,14 +19,36 @@ def init_db():
         print("Database initialized")
 
 @app.route('/search', methods=['POST'])
+def search():
+    try:
+        data = request.get_json()
+        query = data.get('query')
+
+        if not query:
+            return APIUtils.generate_response(error="Query is required", status_code=400)
+
+        searched_data = Search(query)
+
+        return APIUtils.generate_response(data=searched_data.get_query_suggestions())
+    except Exception as e:
+        print(traceback.print_exc())
+        return jsonify({"error": str(e)})
+    
+@app.route('/scrape', methods=['POST'])
 def scrape():
     try:
         data = request.get_json()
-        query = data['query']
+        id = data.get('id')
+        type = data.get('type')
 
-        scrapped_data = Search(query)
+        if not id:
+            return APIUtils.generate_response(error="ID is required", status_code=400)
+        if not type:
+            return APIUtils.generate_response(error="Type is required", status_code=400)
 
-        return APIUtils.generate_response(data=scrapped_data.get_query_suggestions())
+        scrapped_data = Scrape(id, type).init_scrapping()
+
+        return APIUtils.generate_response(data=scrapped_data)
     except Exception as e:
         print(traceback.print_exc())
         return jsonify({"error": str(e)})
