@@ -4,13 +4,13 @@ import json
 
 class APIUtils:
     # Generate Response
-    def generate_response(status = True, data = None, message = None, error = None):
+    def generate_response(status = True, data = None, message = None, error = None, status_code = 200):
         return jsonify({
             "status": status,
             "data": data,
             "message": message,
             "error": error
-        })
+        }), status_code
     
     # Call the API
     def make_api(url):

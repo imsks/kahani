@@ -147,6 +147,7 @@ class SearchIMDB:
         response = self.make_imdb_suggestion_api()
 
         query_suggestions = self.parse_imdb_suggestions(response)
+        print(query_suggestions)
 
         if not query_suggestions:
             return []
@@ -154,16 +155,29 @@ class SearchIMDB:
         mapped_query_suggestions = []
 
         for suggestion in query_suggestions:
-            mapped_query_suggestions.append(
-                {
-                    "id": suggestion.get('id', ''),
-                    "name": suggestion.get('l', ''),
-                    "image": suggestion.get('i', {}).get('imageUrl', None),
-                    "type": suggestion.get('q', ''),
-                    "typeId": suggestion.get('qid', ''), 
-                    "year": suggestion.get('y', ''),
-                }
-            )
+            type = ''
+            is_valid = False
+
+            if suggestion.get('qid', '') == '':
+                type = 'Celeb'
+                is_valid = True
+            elif suggestion.get('qid', '') == 'tvSeries':
+                type = 'TV Show'
+                is_valid = True
+            elif suggestion.get('qid', '') == 'movie':
+                type = 'Movie'
+                is_valid = True
+
+            if is_valid:
+                mapped_query_suggestions.append(
+                    {
+                        "id": suggestion.get('id', ''),
+                        "name": suggestion.get('l', ''),
+                        "image": suggestion.get('i', {}).get('imageUrl', None),
+                        "type": type, 
+                        "year": suggestion.get('y'),
+                    }
+                )
 
         # scraped_celeb_details = ScrapeCeleb().init_scrapping(mapped_query_suggestions[0]['id'])
 
