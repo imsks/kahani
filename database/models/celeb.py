@@ -1,22 +1,26 @@
-from app import db
-
-class Celeb(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True, nullable=False)
-    image = db.Column(db.String(200))
-
-    def store_celeb(data):
+class CelebQuery:
+    def __init__(self, db):
+        self.db = db
+        
+    def store_celeb(self, data):
         if data["type"] != "Celeb":
             return None  # Skip non-celeb entries
 
         celeb = Celeb.query.filter_by(id=data["id"]).first()
         if not celeb:
             celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
-            db.session.add(celeb)
+            self.db.session.add(celeb)
 
         try:
-            db.session.commit()
+            self.db.session.commit()
+            print(f"Stored celeb: {celeb}")
             return celeb
         except Exception as e:
             print(f"Error storing celeb: {e}")
             return None
+
+    def get_celeb(self, celeb_id):
+        return self.db.celeb.find_one({"_id": celeb_id})
+
+    def get_celebs(self, celeb_ids):
+        return self.db.celeb.find({"_id": {"$in": celeb_ids}})

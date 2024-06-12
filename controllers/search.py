@@ -58,7 +58,6 @@ class SearchIMDB:
         response = self.make_imdb_suggestion_api()
 
         query_suggestions = self.parse_imdb_suggestions(response)
-        print(query_suggestions)
 
         if not query_suggestions:
             return []
