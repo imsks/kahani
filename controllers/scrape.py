@@ -29,6 +29,7 @@ class ScrapeCeleb:
         celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
+            "celeb_id": self.id,
             "celeb_filmography": celeb_filmography,
         }
     

@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from controllers.scrape import Scrape
 from controllers.search import Search
+from database.models.celeb import Celeb
 from utils.api import APIUtils
 
 app = Flask(__name__)
@@ -28,6 +29,10 @@ def search():
             return APIUtils.generate_response(error="Query is required", status_code=400)
 
         searched_data = Search(query)
+
+        for item in searched_data:
+            if item["type"] == "Celeb":
+                Celeb.store_celeb(item)
 
         return APIUtils.generate_response(data=searched_data.get_query_suggestions())
     except Exception as e:

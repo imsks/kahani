@@ -79,6 +79,10 @@ class SearchIMDB:
                 type = SearchItemType.MOVIE.value
                 is_valid = True
 
+            # If no image is available, skip the suggestion
+            if not suggestion.get('i'):
+                is_valid = False
+
             if is_valid:
                 mapped_query_suggestions.append(
                     {
