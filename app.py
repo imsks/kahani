@@ -1,5 +1,6 @@
 import traceback
 from flask import Flask, request, jsonify
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from controllers.scrape import Scrape
 from controllers.search import Search
@@ -11,6 +12,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///kahani.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 # Models
 class Celeb(db.Model):
@@ -35,6 +37,33 @@ class Celeb(db.Model):
             print(f"Error storing celeb: {e}")
             return None
 
+# Movie Model
+class Movie(db.Model):
+    id = db.Column(db.String(10), primary_key=True)
+    title = db.Column(db.String(80), nullable=False)
+    year = db.Column(db.Integer)
+    type = db.Column(db.String(10))
+    rating = db.Column(db.Float)
+
+    def store_movie(self, data):
+        if data["type"] != "Movie":
+            return None
+
+        movie = Movie.query.filter_by(id=data["id"]).first()
+        if not movie:
+            movie = Movie(id=data["id"], title=data["name"], year=data["year"])
+            db.session.add(movie)
+            db.session.commit()
+            print(f"Stored movie: {movie}")
+
+        try:
+            db.session.commit()
+            print(f"Stored movie: {movie}")
+            return movie
+        except Exception as e:
+            print(f"Error storing movie: {e}")
+            return None
+
 @app.route('/search', methods=['POST'])
 def search():
     try:
@@ -49,6 +78,8 @@ def search():
         for item in searched_data:
             if item["type"] == "Celeb":
                 Celeb().store_celeb(item)
+            elif item["type"] == "Movie":
+                Movie().store_movie(item)
 
         return APIUtils.generate_response(data=searched_data)
     except Exception as e:

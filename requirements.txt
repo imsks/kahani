@@ -2,3 +2,4 @@ Flask
 Flask-SQLAlchemy
 bs4
 requests
+Flask-Migrate
