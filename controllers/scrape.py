@@ -77,24 +77,19 @@ class ScrapeCeleb:
 
         for film_element in film_elements:
             link = film_element.find('a', class_='ipc-metadata-list-summary-item__t')
+            rating = film_element.find('span', class_='ipc-rating-star')
 
             film  = {}
 
-            if link:
+            if link and rating:
+                film['rating'] = rating.text.strip()
                 title  = link.text.strip()
                 film['title'] = title
 
                 anchor = link.get('href').split('?')[0]
                 if anchor:
                     film['link'] = anchor
-
-                rating = film_element.find('span', class_='ipc-rating-star')
-
-                if rating:
-                    film['rating'] = rating.text.strip()
-                else:
-                    film['rating'] = ""
-
+                
                 cover = film_element.find('img', class_='ipc-image')
 
                 if cover:
@@ -103,5 +98,5 @@ class ScrapeCeleb:
                     film['cover'] = ""
                     
                 films.append(film)
-
+                
         return films
