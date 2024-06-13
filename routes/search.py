@@ -6,11 +6,9 @@ from utils.api import APIUtils
 from utils.contants import SearchItemType
 
 class SearchRoutes:
-# Search From API  
-    def search_via_imdb(self, payload):
+# Search From API
+    def search_via_imdb(self, query):
         try:
-            query = payload.get('query')
-
             if not query:
                 return APIUtils.generate_response(error="Query is required", status_code=400)
 
