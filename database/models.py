@@ -27,7 +27,7 @@ class Celeb(db.Model):
 
 class Movie(db.Model):
     id = db.Column(db.String(10), primary_key=True)
-    title = db.Column(db.String(80), nullable=False)
+    title = db.Column(db.String(80), nullable=False, unique=False)
     year = db.Column(db.Integer)
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
