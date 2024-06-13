@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from controllers.scrape import Scrape
 from controllers.search import Search
 from utils.api import APIUtils
+from utils.contants import SearchItemType
 
 app = Flask(__name__)
 
@@ -46,12 +47,12 @@ class Movie(db.Model):
     rating = db.Column(db.Float)
 
     def store_movie(self, data):
-        if data["type"] != "Movie":
+        if data["type"] != SearchItemType.MOVIE.value and data["type"] != SearchItemType.TV_SHOW.value:
             return None
 
         movie = Movie.query.filter_by(id=data["id"]).first()
         if not movie:
-            movie = Movie(id=data["id"], title=data["name"], year=data["year"])
+            movie = Movie(id=data["id"], title=data["name"], year=data["year"], type=data["type"])
             db.session.add(movie)
             db.session.commit()
             print(f"Stored movie: {movie}")
@@ -76,9 +77,9 @@ def search():
         searched_data = Search(query).get_query_suggestions()
 
         for item in searched_data:
-            if item["type"] == "Celeb":
+            if item["type"] == SearchItemType.CELEB.value:
                 Celeb().store_celeb(item)
-            elif item["type"] == "Movie":
+            else:
                 Movie().store_movie(item)
 
         return APIUtils.generate_response(data=searched_data)
