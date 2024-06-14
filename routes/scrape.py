@@ -1,8 +1,9 @@
 import traceback
 from flask import jsonify, request
 from controllers.scrape import Scrape
-from database.models import Movie
+from database.models import Movie, MovieCelebRole
 from utils.api import APIUtils
+from utils.contants import CelebRoles
 
 def scrape_routes():
     try:
@@ -22,9 +23,10 @@ def scrape_routes():
         celeb_id = scrapped_data.get('celeb_id')
         celeb_filmography = scrapped_data.get('celeb_filmography')
 
-        for film in celeb_filmography['actor']:
+        for movie in celeb_filmography['actor']:
             # Store Films and Movie + Celeb + Role
-            Movie().store_movie(film)
+            Movie().store_movie(movie)
+            MovieCelebRole().store_movie_celeb_role(movie, celeb_id, CelebRoles.ACTOR.value)
 
         # 2. Return the scrapped data
 

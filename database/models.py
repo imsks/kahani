@@ -110,3 +110,24 @@ class MovieCelebRole(db.Model):
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
     celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
+    movie = db.relationship('Movie', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
+    celeb = db.relationship('Celeb', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
+    role = db.relationship('CelebRole', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
+
+    def store_movie_celeb_role(self, movie, celeb, role_id):
+        try:
+            movie_celeb_role = MovieCelebRole.query.filter_by(movie_id=movie.id, celeb_id=celeb.id, role_id=role_id).first()
+            if not movie_celeb_role:
+                movie_celeb_role = MovieCelebRole(movie_id=movie.id, celeb_id=celeb.id
+                                                    , role_id=role_id)
+                db.session.add(movie_celeb_role)
+                db.session.commit()
+                print(f"Stored movie_celeb_role: {movie_celeb_role}")
+                return movie_celeb_role
+            else:
+                print(f"Movie Celeb Role already exists")
+                return movie_celeb_role
+        except Exception as e:
+            print(f"Error storing movie celeb role: {traceback.print_exc()}")
+            return None
+        
