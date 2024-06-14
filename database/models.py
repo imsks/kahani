@@ -1,5 +1,6 @@
+import traceback
 from flask_sqlalchemy import SQLAlchemy
-from utils.contants import CelebRoles, SearchItemType
+from utils.contants import CelebRoles
 
 db = SQLAlchemy()
 
@@ -22,33 +23,51 @@ class Celeb(db.Model):
             print(f"Stored celeb: {celeb}")
             return celeb
         except Exception as e:
-            print(f"Error storing celeb: {e}")
+            print(traceback.print_exc())
             return None
 
 class Movie(db.Model):
     id = db.Column(db.String(10), primary_key=True)
     title = db.Column(db.String(80), nullable=False, unique=False)
     year = db.Column(db.Integer)
+    link = db.Column(db.String(80))
+    image = db.Column(db.String(600))
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
 
     def store_movie(self, data):
-        if data["type"] != SearchItemType.MOVIE.value and data["type"] != SearchItemType.TV_SHOW.value:
-            return None
-
-        movie = Movie.query.filter_by(id=data["id"]).first()
-        if not movie:
-            movie = Movie(id=data["id"], title=data["name"], year=data["year"], type=data["type"])
-            db.session.add(movie)
-            db.session.commit()
-            print(f"Stored movie: {movie}")
-
         try:
-            db.session.commit()
-            print(f"Stored movie: {movie}")
+            movie = Movie.query.filter_by(id=data["id"]).first()
+            if not movie:
+                movie = Movie(id=data["id"], 
+                              title=data["name"], 
+                            )
+                movie.year = data.get("year")
+                movie.type = data.get("type")
+                movie.rating = data.get("rating")
+                movie.link = data.get("link")
+                movie.image = data.get("image")
+                db.session.add(movie)
+                db.session.commit()
+                db.session.commit()
+                print(f"Stored movie: {movie}")
+                
+            else:
+                if movie.type == "" and data.get("type"):
+                    movie.type = data["type"]
+                elif movie.rating == "" and data.get("rating"):
+                    movie.rating = data["rating"]
+                elif movie.year == "" and data.get("year"):
+                    movie.year = data["year"]
+                elif movie.link == "" and data.get("link"):
+                    movie.link = data["link"]
+                elif movie.image == "" and data.get("image"):
+                    movie.image = data["image"]
+                db.session.commit()
+                print(f"Updated movie: {movie}")
             return movie
         except Exception as e:
-            print(f"Error storing movie: {e}")
+            print(traceback.print_exc())
             return None
 
 class Scrapped(db.Model):
@@ -58,9 +77,9 @@ class Scrapped(db.Model):
     updated_at = db.Column(db.DateTime, server_default=db.func.now())
 
     def store_scrapped(self, data):
-        scrapped = Scrapped.query.filter_by(id=data["id"]).first()
-
         try:
+            scrapped = Scrapped.query.filter_by(id=data["id"]).first()
+
             if not scrapped:
                 scrapped = Scrapped(id=data["id"], type=data["type"])
                 db.session.add(scrapped)
@@ -73,7 +92,7 @@ class Scrapped(db.Model):
                 print(f"Updated scrapped: {scrapped}")
                 return scrapped
         except Exception as e:
-            print(f"Error storing scrapped: {e}")
+            print(f"Error storing scrapped: {traceback.print_exc()}")
             return None
         
     def get_scrapped(self, id):

@@ -84,19 +84,23 @@ class ScrapeCeleb:
 
             if link and rating:
                 film['rating'] = rating.text.strip()
-                title  = link.text.strip()
-                film['title'] = title
+                name  = link.text.strip()
+                film['name'] = name
 
                 anchor = link.get('href').split('?')[0]
                 if anchor:
                     film['link'] = anchor
+                    film['id'] = anchor.split('/')[2]
                 
-                cover = film_element.find('img', class_='ipc-image')
+                image = film_element.find('img', class_='ipc-image')
 
-                if cover:
-                    film['cover'] = cover.get('src')
+                if image:
+                    film['image'] = image.get('src')
                 else:
-                    film['cover'] = ""
+                    film['image'] = ""
+                
+                film['year'] = ""
+                film['type'] = ""
                     
                 films.append(film)
                 

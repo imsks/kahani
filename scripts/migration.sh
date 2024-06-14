@@ -5,7 +5,7 @@ source venv/bin/activate
 rm -rf migrations/
 flask db init
 
-REVISION_ID="fc04be48a6be"
+REVISION_ID="f4ae8a75046b"
 
 flask db revision --rev-id "$REVISION_ID"
 

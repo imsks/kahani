@@ -87,6 +87,7 @@ class SearchIMDB:
                     {
                         "id": suggestion.get('id', ''),
                         "name": suggestion.get('l', ''),
+                        "link": "/title/" + suggestion.get('id', ''),
                         "image": suggestion.get('i', {}).get('imageUrl', None),
                         "type": type, 
                         "year": suggestion.get('y'),
