@@ -17,6 +17,7 @@ def scrape_routes():
         scrapped_data = Scrape(id, type).init_scrapping()
 
         # 1. Store the scrapped data in the database
+        # Store Data in Movies
 
         # 2. Return the scrapped data
 

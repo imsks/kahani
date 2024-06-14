@@ -6,7 +6,7 @@ class SearchItemType(Enum):
     CELEB = "Celeb"
 
 class CelebRoles(Enum):
-    WRITER = "Writer"
-    PRODUCER = "Producer"
-    DIRECTOR = "Director"
-    ACTOR = "Actor"
+    WRITER = 1
+    PRODUCER = 2
+    DIRECTOR = 3
+    ACTOR = 4

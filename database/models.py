@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from utils.contants import SearchItemType
+from utils.contants import CelebRoles, SearchItemType
 
 db = SQLAlchemy()
 
@@ -79,3 +79,15 @@ class Scrapped(db.Model):
     def get_scrapped(self, id):
         scrapped = Scrapped.query.filter_by(id=id).first()
         return scrapped
+    
+class CelebRole(db.Model):
+    __tablename__ = 'celeb_role' 
+    id = db.Column(db.Integer, primary_key=True)
+    role = db.Column(db.Enum(CelebRoles), unique=True, nullable=False)
+
+class MovieCelebRole(db.Model):
+    __tablename__ = 'movie_celeb_role' 
+
+    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
+    celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)

@@ -2,6 +2,7 @@ import traceback
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from database.models import db
+from database.populate import PopulateDB
 from routes.scrape import scrape_routes
 from routes.search import SearchRoutes
 
@@ -32,3 +33,8 @@ def init_db():
     with app.app_context():
         migrate.init_app(app, db)
         print("Database initialized")
+
+        populate = PopulateDB(db)
+        populate.init_populate()
+        print("Database populated")
+        
