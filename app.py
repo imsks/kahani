@@ -30,6 +30,5 @@ app.route('/scrape', methods=['POST'])(scrape_routes)
 # Initialize the database
 def init_db():
     with app.app_context():
-        if not migrate.db_exists():
-            migrate.init()
+        migrate.init_app(app, db)
         print("Database initialized")

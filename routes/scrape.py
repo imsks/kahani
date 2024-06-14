@@ -16,6 +16,10 @@ def scrape_routes():
 
         scrapped_data = Scrape(id, type).init_scrapping()
 
+        # 1. Store the scrapped data in the database
+
+        # 2. Return the scrapped data
+
         return APIUtils.generate_response(data=scrapped_data)
     except Exception as e:
         print(traceback.print_exc())

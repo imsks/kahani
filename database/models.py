@@ -51,3 +51,31 @@ class Movie(db.Model):
             print(f"Error storing movie: {e}")
             return None
 
+class Scrapped(db.Model):
+    id = db.Column(db.String(10), primary_key=True)
+    type = db.Column(db.String(10))
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+
+    def store_scrapped(self, data):
+        scrapped = Scrapped.query.filter_by(id=data["id"]).first()
+
+        try:
+            if not scrapped:
+                scrapped = Scrapped(id=data["id"], type=data["type"])
+                db.session.add(scrapped)
+                db.session.commit()
+                print(f"Stored scrapped: {scrapped}")
+                return scrapped
+            else:
+                scrapped.updated_at = db.func.now()
+                db.session.commit()
+                print(f"Updated scrapped: {scrapped}")
+                return scrapped
+        except Exception as e:
+            print(f"Error storing scrapped: {e}")
+            return None
+        
+    def get_scrapped(self, id):
+        scrapped = Scrapped.query.filter_by(id=id).first()
+        return scrapped
