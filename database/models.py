@@ -1,7 +1,7 @@
-from sqlite3 import IntegrityError
 import traceback
 from flask_sqlalchemy import SQLAlchemy
 from utils.contants import CelebRoles
+from utils.functions import is_real_value
 
 db = SQLAlchemy()
 
@@ -42,45 +42,38 @@ class Movie(db.Model):
 
     def store_movie(self, data):
         try:
-            # Ensure all required fields have values (even if empty strings)
-            data = {
-                "id": data.get("id", ""),
-                "name": data.get("name", ""),
-                "year": int(data.get("year", "") or 0),
-                "type": data.get("type", ""),
-                "link": data.get("link", ""),
-                "image": data.get("image", ""),
-                "rating": float(data.get("rating", 0.0)) if data.get("rating") else None,
-            }
-
-            # Check for existing movie
             movie = Movie.query.filter_by(id=data["id"]).first()
-
-            if movie is None:
-                # Create a new movie
-                movie = Movie(**data)
+            if not movie:
+                movie = Movie(id=data["id"], 
+                              name=data["name"], 
+                            )
+                movie.year = data.get("year")
+                movie.type = data.get("type")
+                movie.rating = data.get("rating")
+                movie.link = data.get("link")
+                movie.image = data.get("image")
                 db.session.add(movie)
                 db.session.commit()
+                db.session.commit()
                 print(f"Stored movie: {movie}")
+                
             else:
-                # Update existing movie with data (excluding empty strings)
-                for field, value in data.items():
-                    if value:  # Update only if data has a value (not empty string)
-                        setattr(movie, field, value)
+                if movie.type == "" and is_real_value(data.get("type")):
+                    movie.type = data["type"]
+                elif movie.rating == "" and is_real_value(data.get("rating")):
+                    movie.rating = data["rating"]
+                elif movie.year == "" and is_real_value(data.get("year")):
+                    movie.year = data["year"]
+                elif movie.link == "" and is_real_value(data.get("link")):
+                    movie.link = data["link"]
+                elif movie.image == "" and is_real_value(data.get("image")):
+                    movie.image = data["image"]
                 db.session.commit()
                 print(f"Updated movie: {movie}")
-
             return movie
-
-        except IntegrityError as e:
-            # Handle potential duplicate key errors (e.g., unique constraint violation)
-            print(f"Error storing/updating movie: {e}")
-            return None  # Or raise a more specific exception
-
         except Exception as e:
-            # Catch other unexpected errors
             print(traceback.print_exc())
-            return None  # Or raise a more specific exception
+            return None
 
 class Scrapped(db.Model):
     __tablename__ = 'scrapped' 
