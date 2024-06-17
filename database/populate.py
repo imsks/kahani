@@ -1,3 +1,4 @@
+import traceback
 from sqlalchemy import inspect
 from database.models import Celeb, CelebRole, Movie, MovieCelebRole, Scrapped
 from utils.contants import CelebRoles
@@ -7,10 +8,15 @@ class PopulateDB:
         self.db = db
 
     def init_populate(self):
-        self.create_tables([Movie, Celeb, CelebRole, Scrapped, MovieCelebRole])
+        self.create_tables([Movie, Celeb, CelebRole, MovieCelebRole, Scrapped])
         self.populate_celeb_role()
 
     def populate_celeb_role(self):
+        if not inspect(self.db.engine).has_table(CelebRole.__tablename__):
+            print(f"{CelebRole.__tablename__} table not found. Creating...")
+            self.db.metadata.create_all(self.db.engine, [CelebRole])
+            print(f"{CelebRole.__tablename__} table created successfully!")
+
         existing_roles = CelebRole.query.all()
 
         if existing_roles:
@@ -26,10 +32,14 @@ class PopulateDB:
 
 
     def create_tables(self, models):
-        for model in models:
-            if not inspect(self.db.engine).has_table(model.__tablename__):
-                print(f"{model.__tablename__} table not found. Creating...")
-                self.db.metadata.create_all(self.db.engine, [model])
-                print(f"{model.__tablename__} table created successfully!")
-            else:
-                print(f"{model.__tablename__} table already exists. Skipping...")
+        try:
+            for model in models:
+                if not inspect(self.db.engine).has_table(model.__tablename__):
+                    print(f"{model.__tablename__} table not found. Creating...")
+                    self.db.metadata.create_all(self.db.engine, [model])
+                    print(f"{model.__tablename__} table created successfully!")
+                else:
+                    print(f"{model.__tablename__} table already exists. Skipping...")
+        except Exception as e:
+            print(f"Error creating tables: {traceback.print_exc()}")
+            return None

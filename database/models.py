@@ -33,14 +33,14 @@ class Movie(db.Model):
     __tablename__ = 'movie' 
 
     id = db.Column(db.String(10), primary_key=True)
-    title = db.Column(db.String(80), nullable=False, unique=False)
+    name = db.Column(db.String(80), nullable=False, unique=False)
     year = db.Column(db.Integer)
     link = db.Column(db.String(80))
     image = db.Column(db.String(600))
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
 
-    def store_movie(data):
+    def store_movie(self, data):
         try:
             # Ensure all required fields have values (even if empty strings)
             data = {
@@ -120,7 +120,7 @@ class CelebRole(db.Model):
     role = db.Column(db.Enum(CelebRoles), unique=True, nullable=False)
 
 class MovieCelebRole(db.Model):
-    __tablename__ = 'movie_celeb_role' 
+    __tablename__ = 'movie_celeb_role'
 
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
     celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
