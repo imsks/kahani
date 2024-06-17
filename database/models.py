@@ -1,3 +1,4 @@
+from sqlite3 import IntegrityError
 import traceback
 from flask_sqlalchemy import SQLAlchemy
 from utils.contants import CelebRoles
@@ -5,6 +6,8 @@ from utils.contants import CelebRoles
 db = SQLAlchemy()
 
 class Celeb(db.Model):
+    __tablename__ = 'celeb'
+
     id = db.Column(db.String(10), primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     image = db.Column(db.String(200))
@@ -27,6 +30,8 @@ class Celeb(db.Model):
             return None
 
 class Movie(db.Model):
+    __tablename__ = 'movie' 
+
     id = db.Column(db.String(10), primary_key=True)
     title = db.Column(db.String(80), nullable=False, unique=False)
     year = db.Column(db.Integer)
@@ -35,42 +40,51 @@ class Movie(db.Model):
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
 
-    def store_movie(self, data):
+    def store_movie(data):
         try:
+            # Ensure all required fields have values (even if empty strings)
+            data = {
+                "id": data.get("id", ""),
+                "name": data.get("name", ""),
+                "year": int(data.get("year", "") or 0),
+                "type": data.get("type", ""),
+                "link": data.get("link", ""),
+                "image": data.get("image", ""),
+                "rating": float(data.get("rating", 0.0)) if data.get("rating") else None,
+            }
+
+            # Check for existing movie
             movie = Movie.query.filter_by(id=data["id"]).first()
-            if not movie:
-                movie = Movie(id=data["id"], 
-                              title=data["name"], 
-                            )
-                movie.year = data.get("year")
-                movie.type = data.get("type")
-                movie.rating = data.get("rating")
-                movie.link = data.get("link")
-                movie.image = data.get("image")
+
+            if movie is None:
+                # Create a new movie
+                movie = Movie(**data)
                 db.session.add(movie)
                 db.session.commit()
-                db.session.commit()
                 print(f"Stored movie: {movie}")
-                
             else:
-                if movie.type == "" and data.get("type"):
-                    movie.type = data["type"]
-                elif movie.rating == "" and data.get("rating"):
-                    movie.rating = data["rating"]
-                elif movie.year == "" and data.get("year"):
-                    movie.year = data["year"]
-                elif movie.link == "" and data.get("link"):
-                    movie.link = data["link"]
-                elif movie.image == "" and data.get("image"):
-                    movie.image = data["image"]
+                # Update existing movie with data (excluding empty strings)
+                for field, value in data.items():
+                    if value:  # Update only if data has a value (not empty string)
+                        setattr(movie, field, value)
                 db.session.commit()
                 print(f"Updated movie: {movie}")
+
             return movie
+
+        except IntegrityError as e:
+            # Handle potential duplicate key errors (e.g., unique constraint violation)
+            print(f"Error storing/updating movie: {e}")
+            return None  # Or raise a more specific exception
+
         except Exception as e:
+            # Catch other unexpected errors
             print(traceback.print_exc())
-            return None
+            return None  # Or raise a more specific exception
 
 class Scrapped(db.Model):
+    __tablename__ = 'scrapped' 
+
     id = db.Column(db.String(10), primary_key=True)
     type = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
@@ -101,6 +115,7 @@ class Scrapped(db.Model):
     
 class CelebRole(db.Model):
     __tablename__ = 'celeb_role' 
+    
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.Enum(CelebRoles), unique=True, nullable=False)
 
