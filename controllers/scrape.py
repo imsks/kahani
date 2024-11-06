@@ -98,9 +98,21 @@ class ScrapeCeleb:
                     film['image'] = image.get('src')
                 else:
                     film['image'] = ""
+
+                year = film_element.find('span', class_='ipc-metadata-list-summary-item__li')
                 
-                film['year'] = ""
-                film['type'] = ""
+                film['year'] = year.text.strip() if year else ""
+
+                info_span = film_element.find('div', class_='ipc-metadata-list-summary-item__tc')
+                info_span_values = info_span.find('div').find_all('span')[-1]
+
+                type = SearchItemType.MOVIE.value
+                for value in info_span_values:
+                    if value.get_text() == 'TV Series':
+                        type = SearchItemType.TV_SHOW.value
+                        break
+
+                film['type'] = type
                     
                 films.append(film)
                 

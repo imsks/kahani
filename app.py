@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from database.models import db
 from database.populate import PopulateDB
-from routes.scrape import scrape_routes
+from routes.scrape import scrape
 from routes.search import SearchRoutes
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def search():
         print(traceback.print_exc())
         return jsonify({"error": str(e)})
     
-app.route('/scrape', methods=['POST'])(scrape_routes)
+app.route('/scrape', methods=['POST'])(scrape)
 
 # Initialize the database
 def init_db():
