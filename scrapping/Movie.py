@@ -1,30 +1,19 @@
-from controllers.scrape import Scrape
-from database.models import Movie, MovieCelebRole, Scrapped
-from utils.contants import CelebRoles
+from bs4 import BeautifulSoup
+from database.models import Scrapped
+from utils.api import APIUtils
 
 class MovieScrapper:
     def __init__(self, id, type):
         self.id = id
         self.type = type
-    
-    def init_scrapping(self):
-        scrapped_data = Scrape(self.id, self.type).init_scrapping()
 
-        return scrapped_data
-    
-# Scrap Movies
-class ScrapeMovie:
-    def __init__(self, id):
-        self.id = id
-        
-    # Init Scrapping
+     # Init Scrapping
     def init_scrapping(self):
         scrapped_movie_details = self.scrape_movie_details()
-        movie_celebs = self.get_movie_celebs(scrapped_movie_details)
         
         return {
             "movie_id": self.id,
-            "movie_celebs": movie_celebs,
+            "movie_data": scrapped_movie_details
         }
     
     # Build movie URL
@@ -59,3 +48,15 @@ class ScrapeMovie:
                 celebs.append(celeb)
                 
         return celebs
+    
+    def get_scrapped_data(self):
+        scrapped_data = self.init_scrapping()
+
+        # Store Scrapping log
+        Scrapped().store_scrapped({
+                "id": self.id,
+                "type": self.type
+            })
+        
+        return scrapped_data
+    

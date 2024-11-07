@@ -1,4 +1,5 @@
 from scrapping.Celeb import CelebScrapper
+from scrapping.Movie import MovieScrapper
 from utils.contants import SearchItemType
 
 class ScrapeController:
@@ -10,7 +11,7 @@ class ScrapeController:
         if self.type == SearchItemType.CELEB.value:
             return CelebScrapper(self.id, self.type).get_scrapped_data()
         elif self.type == SearchItemType.MOVIE.value or self.type == SearchItemType.TV_SHOW.value:
-            return CelebScrapper(self.id, self.type).get_scrapped_data()
+            return MovieScrapper(self.id, self.type).get_scrapped_data()
         else:
             return {
                 "error": "Invalid type"
