@@ -1,3 +1,4 @@
+import os
 from bs4 import BeautifulSoup
 from database.models import Scrapped
 from utils.api import APIUtils
@@ -7,9 +8,31 @@ class MovieScrapper:
         self.id = id
         self.type = type
 
-     # Init Scrapping
-    def init_scrapping(self):
+    def get_or_create_html_file(self):
+        # Define the filename based on the movie ID (to uniquely identify each movie)
+        filename = f"movie_{self.id}.html"
+        
+        # Check if the HTML file exists
+        if os.path.exists(filename):
+            print("HTML file already exists. Loading data from the file.")
+            with open(filename, "r", encoding="utf-8") as file:
+                return file.read()  # Return the existing HTML data
+        
+        # If the file doesn't exist, scrape the data and save it
         scrapped_movie_details = self.scrape_movie_details()
+        
+        # Save the scrapped data as an HTML file
+        with open(filename, "w", encoding="utf-8") as file:
+            file.write(scrapped_movie_details)
+        
+        print("HTML file created and data saved.")
+        return scrapped_movie_details 
+
+    # Init Scrapping
+    def init_scrapping(self):
+        # TODO: Implement the logic to scrape movie details
+        # scrapped_movie_details = self.scrape_movie_details()
+        scrapped_movie_details = self.get_or_create_html_file()
         
         return {
             "movie_id": self.id,
@@ -51,6 +74,7 @@ class MovieScrapper:
     
     def get_scrapped_data(self):
         scrapped_data = self.init_scrapping()
+        print("HERE", scrapped_data)
 
         # Store Scrapping log
         Scrapped().store_scrapped({
@@ -58,5 +82,6 @@ class MovieScrapper:
                 "type": self.type
             })
         
-        return scrapped_data
+        # return scrapped_data
+        return {"scrapped_data": "scrapped_data"}
     
