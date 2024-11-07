@@ -18,15 +18,19 @@ class MovieScrapper:
             with open(filename, "r", encoding="utf-8") as file:
                 return file.read()  # Return the existing HTML data
         
-        # If the file doesn't exist, scrape the data and save it
+        # If the file doesn't exist, scrape the data
         scrapped_movie_details = self.scrape_movie_details()
+        
+        # If scrapped_movie_details is bytes, decode it to string
+        if isinstance(scrapped_movie_details, bytes):
+            scrapped_movie_details = scrapped_movie_details.decode("utf-8")
         
         # Save the scrapped data as an HTML file
         with open(filename, "w", encoding="utf-8") as file:
             file.write(scrapped_movie_details)
         
         print("HTML file created and data saved.")
-        return scrapped_movie_details 
+        return scrapped_movie_details  # Return the freshly scraped data
 
     # Init Scrapping
     def init_scrapping(self):
