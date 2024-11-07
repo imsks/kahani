@@ -77,12 +77,12 @@ class CelebScrapper:
                     film['link'] = anchor
                     film['id'] = anchor.split('/')[2]
                 
-                image = film_element.find('img', class_='ipc-image')
+                poster = film_element.find('img', class_='ipc-image')
 
-                if image:
-                    film['image'] = image.get('src')
+                if poster:
+                    film['poster'] = poster.get('src')
                 else:
-                    film['image'] = ""
+                    film['poster'] = ""
 
                 year = film_element.find('span', class_='ipc-metadata-list-summary-item__li')
                 

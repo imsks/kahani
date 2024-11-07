@@ -16,12 +16,12 @@ class Celeb(db.Model):
         if data["type"] != "Celeb":
             return None
 
-        celeb = Celeb.query.filter_by(id=data["id"]).first()
-        if not celeb:
-            celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
-            db.session.add(celeb)
-
         try:
+            celeb = Celeb.query.filter_by(id=data["id"]).first()
+            if not celeb:
+                celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
+                db.session.add(celeb)
+                
             db.session.commit()
             print(f"Stored celeb: {celeb}")
             return celeb
@@ -34,11 +34,16 @@ class Movie(db.Model):
 
     id = db.Column(db.String(10), primary_key=True)
     name = db.Column(db.String(80), nullable=False, unique=False)
+    description = db.Column(db.String(600))
     year = db.Column(db.Integer)
     link = db.Column(db.String(80))
-    image = db.Column(db.String(600))
+    poster = db.Column(db.String(600))
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
+    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
+    director = db.Column(db.String(80))
+    writer = db.Column(db.String(80))
+    genres = db.Column(db.String(80))
 
     def store_movie(self, data):
         try:
@@ -47,15 +52,16 @@ class Movie(db.Model):
                 movie = Movie(id=data["id"], 
                               name=data["name"], 
                             )
+                movie.description = data.get("description")
                 movie.year = data.get("year")
                 movie.type = data.get("type")
                 movie.rating = data.get("rating")
                 movie.link = data.get("link")
-                movie.image = data.get("image")
+                movie.poster = data.get("poster")
+                movie.director = data.get("director")
+                movie.writer = data.get("writer")
+                movie.genres = data.get("genres")
                 db.session.add(movie)
-                db.session.commit()
-                db.session.commit()
-                print(f"Stored movie: {movie}")
                 
             else:
                 if movie.type == "" and is_real_value(data.get("type")):
@@ -66,10 +72,18 @@ class Movie(db.Model):
                     movie.year = data["year"]
                 elif movie.link == "" and is_real_value(data.get("link")):
                     movie.link = data["link"]
-                elif movie.image == "" and is_real_value(data.get("image")):
-                    movie.image = data["image"]
-                db.session.commit()
-                print(f"Updated movie: {movie}")
+                elif movie.poster == "" and is_real_value(data.get("poster")):
+                    movie.poster = data["poster"]
+            
+            # Store celeb data
+            celeb_data_list = data.get("celebs", [])
+            for celeb_data in celeb_data_list:
+                celeb = Celeb().store_celeb(celeb_data)
+                if celeb:
+                    movie.celebs.append(celeb)
+            
+            db.session.commit()
+            print(f"Stored movie: {movie}")
             return movie
         except Exception as e:
             print(traceback.print_exc())

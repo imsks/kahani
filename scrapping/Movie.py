@@ -78,13 +78,16 @@ class MovieScrapper:
     
     def get_scrapped_data(self):
         scrapped_data = self.init_scrapping()
-        print("HERE", scrapped_data)
 
         # Store Scrapping log
         Scrapped().store_scrapped({
                 "id": self.id,
                 "type": self.type
             })
+
+        """
+        poster => ipc-media--poster-l
+        """
         
         # return scrapped_data
         return {"scrapped_data": "scrapped_data"}
