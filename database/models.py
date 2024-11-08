@@ -40,10 +40,10 @@ class Movie(db.Model):
     poster = db.Column(db.String(600))
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
-    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
     director = db.Column(db.String(80))
     writer = db.Column(db.String(80))
-    genres = db.Column(db.String(80))
+    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
+    genres = db.relationship('Genre', secondary='movie_genre', backref=db.backref('movies', lazy='dynamic'))
 
     def store_movie(self, data):
         try:
@@ -81,12 +81,42 @@ class Movie(db.Model):
                 celeb = Celeb().store_celeb(celeb_data)
                 if celeb:
                     movie.celebs.append(celeb)
+
+            # Store genre data
+            genre_data_list = data.get("genres", [])
+            for genre_data in genre_data_list:
+                genre = Genre().store_genre(genre_data)
+                if genre:
+                    movie.genres.append(genre)
             
             db.session.commit()
             print(f"Stored movie: {movie}")
             return movie
         except Exception as e:
             print(traceback.print_exc())
+            return None
+        
+# Create a genres table
+class Genre(db.Model):
+    __tablename__ = 'genre' 
+    
+    id = db.Column(db.Integer, primary_key=True)
+    genre = db.Column(db.String(80), unique=True, nullable=False)
+    
+    def store_genre(self, genre):
+        try:
+            genre = Genre.query.filter_by(genre=genre).first()
+            if not genre:
+                genre = Genre(genre=genre)
+                db.session.add(genre)
+                db.session.commit()
+                print(f"Stored genre: {genre}")
+                return genre
+            else:
+                print(f"Genre already exists")
+                return genre
+        except Exception as e:
+            print(f"Error storing genre: {traceback.print_exc()}")
             return None
     
 class CelebRole(db.Model):

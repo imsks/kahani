@@ -86,7 +86,24 @@ class MovieScrapper:
             })
 
         """
+        // Movie
+        id
+        name
+        description
+        year
+        link
+        type
+        rating
         poster => ipc-media--poster-l
+        celebs
+        director
+        writer
+        genres
+
+        // Celeb
+        id
+        name
+        image
         """
         
         # return scrapped_data
