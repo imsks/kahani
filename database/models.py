@@ -21,6 +21,11 @@ class Celeb(db.Model):
             if not celeb:
                 celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
                 db.session.add(celeb)
+            else:
+                if celeb.name == "" and is_real_value(data.get("name")):
+                    celeb.name = data["name"]
+                elif celeb.image == "" and is_real_value(data.get("image")):
+                    celeb.image = data["image"]
                 
             db.session.commit()
             print(f"Stored celeb: {celeb}")
@@ -40,10 +45,12 @@ class Movie(db.Model):
     poster = db.Column(db.String(600))
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
+    runtime = db.Column(db.String(80))
     director = db.Column(db.String(80))
     writer = db.Column(db.String(80))
     celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
     genres = db.relationship('Genre', secondary='movie_genre', backref=db.backref('movies', lazy='dynamic'))
+    streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', backref=db.backref('movies', lazy='dynamic'))
 
     def store_movie(self, data):
         try:
@@ -60,7 +67,7 @@ class Movie(db.Model):
                 movie.poster = data.get("poster")
                 movie.director = data.get("director")
                 movie.writer = data.get("writer")
-                movie.genres = data.get("genres")
+                movie.runtime = data.get("runtime")
                 db.session.add(movie)
                 
             else:
@@ -74,6 +81,14 @@ class Movie(db.Model):
                     movie.link = data["link"]
                 elif movie.poster == "" and is_real_value(data.get("poster")):
                     movie.poster = data["poster"]
+                elif movie.description == "" and is_real_value(data.get("description")):
+                    movie.description = data["description"]
+                elif movie.director == "" and is_real_value(data.get("director")):
+                    movie.director = data["director"]
+                elif movie.writer == "" and is_real_value(data.get("writer")):
+                    movie.writer = data["writer"]
+                elif movie.runtime == "" and is_real_value(data.get("runtime")):
+                    movie.runtime = data["runtime"]
             
             # Store celeb data
             celeb_data_list = data.get("celebs", [])
@@ -88,6 +103,13 @@ class Movie(db.Model):
                 genre = Genre().store_genre(genre_data)
                 if genre:
                     movie.genres.append(genre)
+
+            # Store streaming service data
+            streaming_service_data_list = data.get("streaming_on", [])
+            for streaming_service_data in streaming_service_data_list:
+                streaming_service = StreamingService().store_streaming_service(streaming_service_data)
+                if streaming_service:
+                    movie.streaming_on.append(streaming_service)
             
             db.session.commit()
             print(f"Stored movie: {movie}")
@@ -117,6 +139,29 @@ class Genre(db.Model):
                 return genre
         except Exception as e:
             print(f"Error storing genre: {traceback.print_exc()}")
+            return None
+        
+# Create a Streaming Service table
+class StreamingService(db.Model):
+    __tablename__ = 'streaming_service' 
+    
+    id = db.Column(db.Integer, primary_key=True)
+    service = db.Column(db.String(80), unique=True, nullable=False)
+    
+    def store_streaming_service(self, service):
+        try:
+            service = StreamingService.query.filter_by(service=service).first()
+            if not service:
+                service = StreamingService(service=service)
+                db.session.add(service)
+                db.session.commit()
+                print(f"Stored streaming service: {service}")
+                return service
+            else:
+                print(f"Streaming Service already exists")
+                return service
+        except Exception as e:
+            print(f"Error storing streaming service: {traceback.print_exc()}")
             return None
     
 class CelebRole(db.Model):

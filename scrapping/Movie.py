@@ -1,4 +1,5 @@
 import os
+import re
 from bs4 import BeautifulSoup
 from database.models import Scrapped
 from utils.api import APIUtils
@@ -87,25 +88,36 @@ class MovieScrapper:
 
         """
         // Movie
-        id
-        name
-        description
-        year
-        link
-        type
-        rating
+        id -> self.id
+        name -> hero__primary-text
+        description -> data-testid="plot"
+        year -> hero-parent -> hero__pageTitle -> SIBLING -> UL
+        link -> /title/{self.id}/
+        type -> self.type
+        rating -> hero-rating-bar__aggregate-rating__score
+        runtime hero-parent -> hero__pageTitle -> SIBLING -> UL
         poster => ipc-media--poster-l
-        celebs
-        director
-        writer
-        genres
+        celebs -> data-testid="title-cast"
+        director -> data-testid="plot" -> SIBLING -> DIV
+        writer -> data-testid="plot" -> SIBLING -> DIV
+        genres -> data-testid="interests"
 
         // Celeb
         id
         name
         image
         """
-        
+
         # return scrapped_data
         return {"scrapped_data": "scrapped_data"}
     
+    # Helper functions
+    def extract_year(text):
+        # Matches a four-digit year
+        match = re.match(r'^\d{4}$', text)
+        return match.group(0) if match else None
+
+    def extract_runtime(text):
+        # Matches runtime format, e.g., '2h 39m'
+        match = re.match(r'(\d+h\s*)?(\d+m)?', text)
+        return text if match else None
