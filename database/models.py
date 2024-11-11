@@ -22,23 +22,23 @@ class Celeb(db.Model):
                 celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
                 db.session.add(celeb)
             else:
-                if celeb.name == "" and is_real_value(data.get("name")):
+                if not celeb.name and is_real_value(data.get("name")):
                     celeb.name = data["name"]
-                elif celeb.image == "" and is_real_value(data.get("image")):
+                if not celeb.image and is_real_value(data.get("image")):
                     celeb.image = data["image"]
                 
             db.session.commit()
             print(f"Stored celeb: {celeb}")
             return celeb
-        except Exception as e:
-            print(traceback.print_exc())
+        except Exception:
+            print(traceback.format_exc())
             return None
 
 class Movie(db.Model):
     __tablename__ = 'movie' 
 
     id = db.Column(db.String(10), primary_key=True)
-    name = db.Column(db.String(80), nullable=False, unique=False)
+    name = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(600))
     year = db.Column(db.Integer)
     link = db.Column(db.String(80))
@@ -48,65 +48,35 @@ class Movie(db.Model):
     runtime = db.Column(db.String(80))
     director = db.Column(db.String(80))
     writer = db.Column(db.String(80))
-    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
-    genres = db.relationship('Genre', secondary='movie_genre', backref=db.backref('movies', lazy='dynamic'))
-    streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', backref=db.backref('movies', lazy='dynamic'))
 
+    celebs = db.relationship('Celeb', secondary='movie_celeb_role', back_populates='movies')
+    genres = db.relationship('Genre', secondary='movie_genre', back_populates='movies')
+    streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', back_populates='movies')
+    
     def store_movie(self, data):
         try:
             movie = Movie.query.filter_by(id=data["id"]).first()
             if not movie:
-                movie = Movie(id=data["id"], 
-                              name=data["name"], 
-                            )
-                movie.description = data.get("description")
-                movie.year = data.get("year")
-                movie.type = data.get("type")
-                movie.rating = data.get("rating")
-                movie.link = data.get("link")
-                movie.poster = data.get("poster")
-                movie.director = data.get("director")
-                movie.writer = data.get("writer")
-                movie.runtime = data.get("runtime")
+                movie = Movie(id=data["id"], name=data["name"])
                 db.session.add(movie)
                 
-            else:
-                if movie.type == "" and is_real_value(data.get("type")):
-                    movie.type = data["type"]
-                elif movie.rating == "" and is_real_value(data.get("rating")):
-                    movie.rating = data["rating"]
-                elif movie.year == "" and is_real_value(data.get("year")):
-                    movie.year = data["year"]
-                elif movie.link == "" and is_real_value(data.get("link")):
-                    movie.link = data["link"]
-                elif movie.poster == "" and is_real_value(data.get("poster")):
-                    movie.poster = data["poster"]
-                elif movie.description == "" and is_real_value(data.get("description")):
-                    movie.description = data["description"]
-                elif movie.director == "" and is_real_value(data.get("director")):
-                    movie.director = data["director"]
-                elif movie.writer == "" and is_real_value(data.get("writer")):
-                    movie.writer = data["writer"]
-                elif movie.runtime == "" and is_real_value(data.get("runtime")):
-                    movie.runtime = data["runtime"]
-            
-            # Store celeb data
-            celeb_data_list = data.get("celebs", [])
-            for celeb_data in celeb_data_list:
+            # Update fields if necessary
+            for field in ["description", "year", "type", "rating", "link", "poster", "director", "writer", "runtime"]:
+                if not getattr(movie, field) and is_real_value(data.get(field)):
+                    setattr(movie, field, data.get(field))
+
+            # Store related data
+            for celeb_data in data.get("celebs", []):
                 celeb = Celeb().store_celeb(celeb_data)
                 if celeb:
                     movie.celebs.append(celeb)
 
-            # Store genre data
-            genre_data_list = data.get("genres", [])
-            for genre_data in genre_data_list:
+            for genre_data in data.get("genres", []):
                 genre = Genre().store_genre(genre_data)
                 if genre:
                     movie.genres.append(genre)
 
-            # Store streaming service data
-            streaming_service_data_list = data.get("streaming_on", [])
-            for streaming_service_data in streaming_service_data_list:
+            for streaming_service_data in data.get("streaming_on", []):
                 streaming_service = StreamingService().store_streaming_service(streaming_service_data)
                 if streaming_service:
                     movie.streaming_on.append(streaming_service)
@@ -114,11 +84,10 @@ class Movie(db.Model):
             db.session.commit()
             print(f"Stored movie: {movie}")
             return movie
-        except Exception as e:
-            print(traceback.print_exc())
+        except Exception:
+            print(traceback.format_exc())
             return None
         
-# Create a genres table
 class Genre(db.Model):
     __tablename__ = 'genre' 
     
@@ -127,21 +96,23 @@ class Genre(db.Model):
     
     def store_genre(self, genre):
         try:
-            genre = Genre.query.filter_by(genre=genre).first()
-            if not genre:
-                genre = Genre(genre=genre)
-                db.session.add(genre)
+            genre_obj = Genre.query.filter_by(genre=genre).first()
+            if not genre_obj:
+                genre_obj = Genre(genre=genre)
+                db.session.add(genre_obj)
                 db.session.commit()
-                print(f"Stored genre: {genre}")
-                return genre
-            else:
-                print(f"Genre already exists")
-                return genre
-        except Exception as e:
-            print(f"Error storing genre: {traceback.print_exc()}")
+                print(f"Stored genre: {genre_obj}")
+            return genre_obj
+        except Exception:
+            print(f"Error storing genre: {traceback.format_exc()}")
             return None
-        
-# Create a Streaming Service table
+
+class MovieGenre(db.Model):
+    __tablename__ = 'movie_genre'
+
+    movie_id = db.Column(db.String(10), db.ForeignKey('movie.id'), primary_key=True)
+    genre_id = db.Column(db.Integer, db.ForeignKey('genre.id'), primary_key=True)
+
 class StreamingService(db.Model):
     __tablename__ = 'streaming_service' 
     
@@ -150,20 +121,23 @@ class StreamingService(db.Model):
     
     def store_streaming_service(self, service):
         try:
-            service = StreamingService.query.filter_by(service=service).first()
-            if not service:
-                service = StreamingService(service=service)
-                db.session.add(service)
+            service_obj = StreamingService.query.filter_by(service=service).first()
+            if not service_obj:
+                service_obj = StreamingService(service=service)
+                db.session.add(service_obj)
                 db.session.commit()
-                print(f"Stored streaming service: {service}")
-                return service
-            else:
-                print(f"Streaming Service already exists")
-                return service
-        except Exception as e:
-            print(f"Error storing streaming service: {traceback.print_exc()}")
+                print(f"Stored streaming service: {service_obj}")
+            return service_obj
+        except Exception:
+            print(f"Error storing streaming service: {traceback.format_exc()}")
             return None
-    
+
+class MovieStreamingService(db.Model):
+    __tablename__ = 'movie_streaming_service'
+
+    movie_id = db.Column(db.String(10), db.ForeignKey('movie.id'), primary_key=True)
+    service_id = db.Column(db.Integer, db.ForeignKey('streaming_service.id'), primary_key=True)
+
 class CelebRole(db.Model):
     __tablename__ = 'celeb_role' 
     
@@ -173,58 +147,45 @@ class CelebRole(db.Model):
 class MovieCelebRole(db.Model):
     __tablename__ = 'movie_celeb_role'
 
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
-    celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
+    movie_id = db.Column(db.String(10), db.ForeignKey('movie.id'), primary_key=True)
+    celeb_id = db.Column(db.String(10), db.ForeignKey('celeb.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
-    movie = db.relationship('Movie', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
-    celeb = db.relationship('Celeb', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
-    role = db.relationship('CelebRole', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
 
     def store_movie_celeb_role(self, movie_id, celeb_id, role_id):
         try:
-            movie_celeb_role = MovieCelebRole.query.filter_by(movie_id=movie_id, celeb_id=celeb_id, role_id=role_id).first()
-
-            if not movie_celeb_role:
-                movie_celeb_role = MovieCelebRole(movie_id=movie_id, celeb_id=celeb_id
-                                                    , role_id=role_id)
-                db.session.add(movie_celeb_role)
+            role = MovieCelebRole.query.filter_by(movie_id=movie_id, celeb_id=celeb_id, role_id=role_id).first()
+            if not role:
+                role = MovieCelebRole(movie_id=movie_id, celeb_id=celeb_id, role_id=role_id)
+                db.session.add(role)
                 db.session.commit()
-                print(f"Stored movie_celeb_role: {movie_celeb_role}")
-                return movie_celeb_role
-            else:
-                print(f"Movie Celeb Role already exists")
-                return movie_celeb_role
-        except Exception as e:
-            print(f"Error storing movie celeb role: {traceback.print_exc()}")
+                print(f"Stored movie_celeb_role: {role}")
+            return role
+        except Exception:
+            print(f"Error storing movie celeb role: {traceback.format_exc()}")
             return None
-        
+
 class Scrapped(db.Model):
     __tablename__ = 'scrapped' 
 
     id = db.Column(db.String(10), primary_key=True)
     type = db.Column(db.String(10))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now(), onupdate=db.func.now())
 
     def store_scrapped(self, data):
         try:
             scrapped = Scrapped.query.filter_by(id=data["id"]).first()
-
             if not scrapped:
                 scrapped = Scrapped(id=data["id"], type=data["type"])
                 db.session.add(scrapped)
-                db.session.commit()
-                print(f"Stored scrapped: {scrapped}")
-                return scrapped
             else:
                 scrapped.updated_at = db.func.now()
-                db.session.commit()
-                print(f"Updated scrapped: {scrapped}")
-                return scrapped
-        except Exception as e:
-            print(f"Error storing scrapped: {traceback.print_exc()}")
+            db.session.commit()
+            print(f"Stored/Updated scrapped: {scrapped}")
+            return scrapped
+        except Exception:
+            print(f"Error storing scrapped: {traceback.format_exc()}")
             return None
-        
+
     def get_scrapped(self, id):
-        scrapped = Scrapped.query.filter_by(id=id).first()
-        return scrapped
+        return Scrapped.query.filter_by(id=id).first()
