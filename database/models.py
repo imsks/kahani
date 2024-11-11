@@ -48,10 +48,10 @@ class Movie(db.Model):
     runtime = db.Column(db.String(80))
     director = db.Column(db.String(80))
     writer = db.Column(db.String(80))
-    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic', overlaps="celebs,movies"))
-    genres = db.relationship('Genre', secondary='movie_genre', backref=db.backref('movies', lazy='dynamic', overlaps="genres,movies"))
-    streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', backref=db.backref('movies', lazy='dynamic', overlaps="movies,streaming_on"))
-    
+    celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
+    genres = db.relationship('Genre', secondary='movie_genre', backref=db.backref('movies', lazy='dynamic'))
+    streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', backref=db.backref('movies', lazy='dynamic'))
+
     def store_movie(self, data):
         try:
             movie = Movie.query.filter_by(id=data["id"]).first()
@@ -140,7 +140,7 @@ class Genre(db.Model):
         except Exception as e:
             print(f"Error storing genre: {traceback.print_exc()}")
             return None
-
+        
 class MovieGenre(db.Model):
     __tablename__ = 'movie_genre'
 
@@ -148,8 +148,8 @@ class MovieGenre(db.Model):
     genre_id = db.Column(db.Integer, db.ForeignKey('genre.id'), primary_key=True)
 
     # Relationships with Movie and Genre
-    movie = db.relationship('Movie', backref=db.backref('movie_genres', cascade='all, delete-orphan', overlaps="genres,movies", lazy='dynamic'))
-    genre = db.relationship('Genre', backref=db.backref('movie_genres', cascade='all, delete-orphan', overlaps="genres,movies", lazy='dynamic'))
+    movie = db.relationship('Movie', backref=db.backref('movie_genres', cascade='all, delete-orphan'))
+    genre = db.relationship('Genre', backref=db.backref('movie_genres', cascade='all, delete-orphan'))
         
 # Create a Streaming Service table
 class StreamingService(db.Model):
@@ -181,8 +181,8 @@ class MovieStreamingService(db.Model):
     service_id = db.Column(db.Integer, db.ForeignKey('streaming_service.id'), primary_key=True)
 
     # Relationships with Movie and StreamingService
-    movie = db.relationship('Movie', backref=db.backref('movie_streaming_services', cascade='all, delete-orphan', overlaps="movies,streaming_on"))
-    streaming_service = db.relationship('StreamingService', backref=db.backref('movie_streaming_services', cascade='all, delete-orphan', overlaps="movies,streaming_on"))
+    movie = db.relationship('Movie', backref=db.backref('movie_streaming_services', cascade='all, delete-orphan'))
+    streaming_service = db.relationship('StreamingService', backref=db.backref('movie_streaming_services', cascade='all, delete-orphan'))
     
 class CelebRole(db.Model):
     __tablename__ = 'celeb_role' 
@@ -196,9 +196,9 @@ class MovieCelebRole(db.Model):
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
     celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
-    movie = db.relationship('Movie', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan', overlaps="celebs,movies"))
-    celeb = db.relationship('Celeb', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan', overlaps="celebs,movies"))
-    role = db.relationship('CelebRole', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan', overlaps="celebs,movies"))
+    movie = db.relationship('Movie', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
+    celeb = db.relationship('Celeb', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
+    role = db.relationship('CelebRole', backref=db.backref('movie_celeb_role', cascade='all, delete-orphan'))
 
     def store_movie_celeb_role(self, movie_id, celeb_id, role_id):
         try:
