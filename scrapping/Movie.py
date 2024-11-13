@@ -38,10 +38,11 @@ class MovieScrapper:
         # TODO: Implement the logic to scrape movie details
         # scrapped_movie_details = self.scrape_movie_details()
         scrapped_movie_details = self.get_or_create_html_file()
+        movie_data = self.process_film_content(scrapped_movie_details)
         
         return {
-            "movie_id": self.id,
-            "movie_data": scrapped_movie_details
+            "id": self.id,
+            "data": movie_data
         }
     
     # Build movie URL
@@ -58,46 +59,10 @@ class MovieScrapper:
         return response.content
     
     # Get Movie Celebs
-    def get_movie_celebs(self, html_content):
-        soup = BeautifulSoup(html_content, 'html.parser')
-        
-        all_celeb_elements = soup.find_all('div', class_='credit_summary_item')
-        
-        celebs = []
-        for celeb_element in all_celeb_elements:
-            celeb = {}
-            celeb_name = celeb_element.find('a')
-            celeb_role = celeb_element.find('h4')
-            
-            if celeb_name and celeb_role:
-                celeb['name'] = celeb_name.text.strip()
-                celeb['role'] = celeb_role.text.strip()
-                
-                celebs.append(celeb)
-                
-        return celebs
-    
-    def get_scrapped_data(self):
-        scrapped_data = self.init_scrapping()
-
-        # Store Scrapping log
-        Scrapped().store_scrapped({
-                "id": self.id,
-                "type": self.type
-            })
-
+    def process_film_content(self, html_content):
         """
         // Movie
-        id -> self.id
-        name -> hero__primary-text
-        description -> data-testid="plot"
-        year -> hero-parent -> hero__pageTitle -> SIBLING -> UL
-        link -> /title/{self.id}/
-        type -> self.type
-        rating -> hero-rating-bar__aggregate-rating__score
-        runtime hero-parent -> hero__pageTitle -> SIBLING -> UL
-        poster => ipc-media--poster-l
-        celebs -> data-testid="title-cast"
+        celebs -> (section)data-testid="title-cast" -> data-testid="title-cast-item"
         director -> data-testid="plot" -> SIBLING -> DIV
         writer -> data-testid="plot" -> SIBLING -> DIV
         genres -> data-testid="interests"
@@ -108,16 +73,127 @@ class MovieScrapper:
         image
         """
 
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        # Get movie name
+        name = soup.find('span', class_='hero__primary-text').text
+
+        # Get movie description
+        description = soup.find('span', {'data-testid': 'plot-xs_to_m'}).text
+
+        # Get movie year and runtime
+        year = None
+        runtime = None
+        rating = None
+        poster = None
+        celeb_data = []
+        section = soup.find('section', {'data-testid': 'hero-parent'})
+        if section:
+            page_title_h1 = section.find('h1', {'data-testid': 'hero__pageTitle'})
+
+            if page_title_h1:
+                # Find the ul with class "ipc-inline-list" and each li within it
+                ul = page_title_h1.find_next_sibling('ul', class_='ipc-inline-list')
+                
+                if ul:
+                    li_elements = ul.find_all('li', class_='ipc-inline-list__item')
+                    li_texts = [li.get_text(strip=True) for li in li_elements]
+                    
+                    # Process each li element to extract year and runtime
+                    for text in li_texts:
+                        if not year:
+                            year = self.extract_year(text)
+                        elif not runtime:
+                            runtime = self.extract_runtime(text)
+        
+        # Get Movie Rating
+        rating_div = soup.find('div', {"data-testid": 'hero-rating-bar__aggregate-rating__score'})
+        if rating_div:
+            rating_span = rating_div.find('span')  # Target the first span
+            if rating_span:
+                rating = rating_span.get_text(strip=True)
+
+        # Get Movie Poster
+        poster_div = soup.find('div', class_='ipc-media ipc-media--poster-27x40 ipc-image-media-ratio--poster-27x40 ipc-media--rounded ipc-media--baseAlt ipc-media--poster-l ipc-poster__poster-image ipc-media__img')
+        if poster_div:
+            img_tag = poster_div.find('img')
+            if img_tag:
+                poster = self.get_hidef_image(img_tag)
+
+        # Get Movie Cast
+        cast_section = soup.find('section', {'data-testid': 'title-cast'})
+        # Process only the first five celeb items
+        if cast_section:
+            cast_items = cast_section.find_all('div', {'data-testid': 'title-cast-item'}, limit=5)
+            
+            for cast_item in cast_items:
+                celeb = {}
+
+                # Extract image URL (last item in srcSet)
+                image_tag = cast_item.find('img', {'class': 'ipc-image'})
+                if image_tag and image_tag.has_attr('srcset'):
+                    celeb['image_url'] = self.get_hidef_image(img_tag)
+                
+                # Extract celeb name and ID from the anchor tag
+                actor_tag = cast_item.find('a', {'data-testid': 'title-cast-item__actor'})
+                if actor_tag:
+                    celeb['name'] = actor_tag.get_text(strip=True)
+                    
+                    # Extract the ID from the href attribute
+                    href = actor_tag['href']
+                    celeb['id'] = href.split('/')[2] if '/name/' in href else None
+
+                # Add celeb info to list if all required data is present
+                if celeb:
+                    celeb_data.append(celeb)
+
+        return {
+            "name": name,
+            "description": ' '.join(description.split()),
+            "year": year,
+            "runtime": runtime,
+            "link": f"/title/{self.id}/",
+            "type": self.type,
+            "rating": rating,
+            "poster": poster,
+            "celebs": celeb_data
+        }
+    
+    def get_scrapped_data(self):
+        scrapped_data = self.init_scrapping()
+
+        # Store Scrapping log
+        Scrapped().store_scrapped({
+                "id": self.id,
+                "type": self.type
+            })
+        
+        print("HERE", scrapped_data)
+
         # return scrapped_data
-        return {"scrapped_data": "scrapped_data"}
+        return scrapped_data
     
     # Helper functions
-    def extract_year(text):
-        # Matches a four-digit year
-        match = re.match(r'^\d{4}$', text)
-        return match.group(0) if match else None
+    def extract_year(self, text):
+        if text.isdigit() and len(text) == 4:
+            return text
+        return None
 
-    def extract_runtime(text):
-        # Matches runtime format, e.g., '2h 39m'
-        match = re.match(r'(\d+h\s*)?(\d+m)?', text)
-        return text if match else None
+    def extract_runtime(self, text):
+        # Check if the text has a time-related keyword (e.g., 'min')
+        if 'm' in text or 'h' in text:
+            return text
+        return None
+    
+    def get_hidef_image(self, img_tag):
+        srcset = img_tag.get('srcset', '')
+                
+        # Split srcSet by commas to get individual entries
+        srcset_items = srcset.split(', ')
+        
+        # Take the last entry and split by space to get the URL part
+        if srcset_items:
+            poster = srcset_items[-1].split(' ')[0]
+            return poster
+        
+        return None
