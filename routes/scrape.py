@@ -12,17 +12,15 @@ def scrape():
 
         if not id:
             return APIUtils.generate_response(error="ID is required", status_code=400)
-        if not type:
+        elif not type:
             return APIUtils.generate_response(error="Type is required", status_code=400)
-        
-        # Check if type is either celeb, movie or tv show
-        if type in [SearchItemType.CELEB.value, SearchItemType.MOVIE.value, SearchItemType.TV_SHOW.value]:
-            scrapper = ScrapeController(id, type)
-            scrapped_data = scrapper.main() 
-
-            return APIUtils.generate_response(data=scrapped_data)
-        else:
+        elif type not in [SearchItemType.CELEB.value, SearchItemType.MOVIE.value, SearchItemType.TV_SHOW.value]:
             return APIUtils.generate_response(error="Invalid type", status_code=400)
+        
+        scrapper = ScrapeController(id, type)
+        scrapped_data = scrapper.main() 
+
+        return APIUtils.generate_response(data=scrapped_data)
     except Exception as e:
         print(traceback.print_exc())
         return jsonify({"error": str(e)})
