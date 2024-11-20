@@ -62,9 +62,8 @@ class MovieScrapper:
     def process_film_content(self, html_content):
         """
         // Movie
-        celebs -> (section)data-testid="title-cast" -> data-testid="title-cast-item"
-        director -> data-testid="plot" -> SIBLING -> DIV
-        writer -> data-testid="plot" -> SIBLING -> DIV
+        director -> data-testid="title-pc-principal-credit" -> SIBLING -> DIV
+        writer -> data-testid="title-pc-principal-credit" -> SIBLING -> DIV
         genres -> data-testid="interests"
 
         // Celeb
@@ -147,6 +146,32 @@ class MovieScrapper:
                 if celeb:
                     celeb_data.append(celeb)
 
+        # Get Movie Director & Writer
+        credit_elements = soup.find_all('li', {'data-testid': 'title-pc-principal-credit'})
+
+        # Initialize dictionaries for Director and Writer
+        credits = {'Director': [], 'Writers': []}
+
+        # Get first two elements only
+        for element in credit_elements[0:2]:
+            span = element.find('span', class_='ipc-metadata-list-item__label')
+            if span and span.get_text(strip=True) in credits:
+                credit_type = span.get_text(strip=True)
+
+                content_div = element.find('div', class_='ipc-metadata-list-item__content-container')
+                if content_div:
+                    # Extract all names and IDs
+                    anchor_tags = content_div.find_all('a', class_='ipc-metadata-list-item__list-content-item--link')
+                    names_and_ids = []
+                    for a in anchor_tags:
+                        name = a.get_text(strip=True)  # Clean the name
+                        href = a['href']  # Extract the href
+                        person_id = href.split('/')[2]  # Extract "nm1665004" from "/name/nm1665004/"
+                        names_and_ids.append({'name': name, 'id': person_id})
+                    
+                    # Add to credits
+                    credits[credit_type].extend(names_and_ids)
+                    
         return {
             "name": name,
             "description": ' '.join(description.split()),
@@ -156,7 +181,8 @@ class MovieScrapper:
             "type": self.type,
             "rating": rating,
             "poster": poster,
-            "celebs": celeb_data
+            "celebs": celeb_data,
+            "credits": credits
         }
     
     def get_scrapped_data(self):
