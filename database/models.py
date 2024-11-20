@@ -1,6 +1,6 @@
 import traceback
 from flask_sqlalchemy import SQLAlchemy
-from utils.contants import CelebRoles
+from utils.contants import CelebRoles, SearchItemType
 from utils.functions import is_real_value
 
 db = SQLAlchemy()
@@ -93,7 +93,7 @@ class Movie(db.Model):
             # Store celeb data
             celeb_data_list = data.get("celebs", [])
             for celeb_data in celeb_data_list:
-                celeb = Celeb().store_celeb(celeb_data)
+                celeb = Celeb().store_celeb({**celeb_data, "type": SearchItemType.CELEB.value})
                 if celeb:
                     movie.celebs.append(celeb)
 

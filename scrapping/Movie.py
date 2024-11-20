@@ -1,8 +1,9 @@
 import os
 import re
 from bs4 import BeautifulSoup
-from database.models import Scrapped
+from database.models import Celeb, Movie, Scrapped
 from utils.api import APIUtils
+from utils.contants import SearchItemType
 
 class MovieScrapper:
     def __init__(self, id, type):
@@ -60,11 +61,6 @@ class MovieScrapper:
     
     # Get Movie Celebs
     def process_film_content(self, html_content):
-        """
-        // Movie
-        streaming -> data-testid="watchlist-button"
-        """
-
         soup = BeautifulSoup(html_content, 'html.parser')
 
         # Get movie name
@@ -72,6 +68,10 @@ class MovieScrapper:
 
         # Get movie description
         description = soup.find('span', {'data-testid': 'plot-xs_to_m'}).text
+        description = ' '.join(description.split())
+
+        # Get Movie link
+        link = f"https://www.imdb.com/title/{self.id}/"
 
         # Get movie year and runtime
         year = None
@@ -127,7 +127,7 @@ class MovieScrapper:
                 # Extract image URL (last item in srcSet)
                 image_tag = cast_item.find('img', {'class': 'ipc-image'})
                 if image_tag and image_tag.has_attr('srcset'):
-                    celeb['image_url'] = self.get_hidef_image(image_tag)
+                    celeb['image'] = self.get_hidef_image(image_tag)
                 
                 # Extract celeb name and ID from the anchor tag
                 actor_tag = cast_item.find('a', {'data-testid': 'title-cast-item__actor'})
@@ -201,10 +201,10 @@ class MovieScrapper:
 
         return {
             "name": name,
-            "description": ' '.join(description.split()),
+            "description": description,
             "year": year,
             "runtime": runtime,
-            "link": f"https://www.imdb.com/title/{self.id}/",
+            "link": link,
             "type": self.type,
             "rating": rating,
             "poster": poster,
@@ -221,6 +221,24 @@ class MovieScrapper:
                 "id": self.id,
                 "type": self.type
             })
+        
+        # Store Data in Movies Model
+        movie = {
+            "id": self.id,
+            "name": scrapped_data.get('name'),
+            "description": scrapped_data.get('description'),
+            "year": scrapped_data.get('year'),
+            "runtime": scrapped_data.get('runtime'),
+            "link": scrapped_data.get('link'),
+            "type": scrapped_data.get('type'),
+            "rating": scrapped_data.get('rating'),
+            "poster": scrapped_data.get('poster'),
+            "credits": scrapped_data.get('credits'),
+            "genres": scrapped_data.get('genres'),
+            "celebs": scrapped_data.get('celebs')
+        }
+
+        Movie().store_movie(movie)
         
         # return scrapped_data
         return scrapped_data
