@@ -42,7 +42,7 @@ class MovieScrapper:
         
         return {
             "id": self.id,
-            "data": movie_data
+            **movie_data
         }
     
     # Build movie URL
@@ -132,7 +132,7 @@ class MovieScrapper:
                 # Extract image URL (last item in srcSet)
                 image_tag = cast_item.find('img', {'class': 'ipc-image'})
                 if image_tag and image_tag.has_attr('srcset'):
-                    celeb['image_url'] = self.get_hidef_image(img_tag)
+                    celeb['image_url'] = self.get_hidef_image(image_tag)
                 
                 # Extract celeb name and ID from the anchor tag
                 actor_tag = cast_item.find('a', {'data-testid': 'title-cast-item__actor'})
@@ -152,7 +152,7 @@ class MovieScrapper:
             "description": ' '.join(description.split()),
             "year": year,
             "runtime": runtime,
-            "link": f"/title/{self.id}/",
+            "link": f"https://www.imdb.com/title/{self.id}/",
             "type": self.type,
             "rating": rating,
             "poster": poster,
@@ -168,8 +168,6 @@ class MovieScrapper:
                 "type": self.type
             })
         
-        print("HERE", scrapped_data)
-
         # return scrapped_data
         return scrapped_data
     

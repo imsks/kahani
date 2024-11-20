@@ -66,17 +66,21 @@ class SearchIMDB:
 
         for suggestion in query_suggestions:
             type = ''
+            link = ''
             is_valid = False
 
             if suggestion.get('qid', '') == '':
                 type = SearchItemType.CELEB.value
                 is_valid = True
+                link = "https://www.imdb.com/name/" + suggestion.get('id', ''),
             elif suggestion.get('qid', '') == 'tvSeries':
                 type = SearchItemType.TV_SHOW.value
                 is_valid = True
+                link = "https://www.imdb.com/title/" + suggestion.get('id', ''),
             elif suggestion.get('qid', '') == 'movie':
                 type = SearchItemType.MOVIE.value
                 is_valid = True
+                link = "https://www.imdb.com/title/" + suggestion.get('id', ''),
 
             # If no image is available, skip the suggestion
             if not suggestion.get('i'):
@@ -87,7 +91,7 @@ class SearchIMDB:
                     {
                         "id": suggestion.get('id', ''),
                         "name": suggestion.get('l', ''),
-                        "link": "/title/" + suggestion.get('id', ''),
+                        "link": link,
                         "image": suggestion.get('i', {}).get('imageUrl', None),
                         "type": type, 
                         "year": suggestion.get('y'),

@@ -70,7 +70,7 @@ class CelebScrapper:
             if link and rating:
                 film['rating'] = rating.text.strip()
                 name  = link.text.strip()
-                film['name'] = name
+                film['name'] = f"https://www.imdb.com/title/{name}/"
 
                 anchor = link.get('href').split('?')[0]
                 if anchor:

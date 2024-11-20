@@ -18,7 +18,7 @@ def scrape():
             return APIUtils.generate_response(error="Invalid type", status_code=400)
         
         scrapper = ScrapeController(id, type)
-        scrapped_data = scrapper.main() 
+        scrapped_data = scrapper.main()
 
         return APIUtils.generate_response(data=scrapped_data)
     except Exception as e:
