@@ -118,7 +118,6 @@ class Movie(db.Model):
             print(traceback.print_exc())
             return None
         
-# Create a genres table
 class Genre(db.Model):
     __tablename__ = 'genre' 
     
