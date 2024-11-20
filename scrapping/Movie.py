@@ -164,10 +164,23 @@ class MovieScrapper:
                     anchor_tags = content_div.find_all('a', class_='ipc-metadata-list-item__list-content-item--link')
                     names_and_ids = []
                     for a in anchor_tags:
-                        name = a.get_text(strip=True)  # Clean the name
-                        href = a['href']  # Extract the href
-                        person_id = href.split('/')[2]  # Extract "nm1665004" from "/name/nm1665004/"
-                        names_and_ids.append({'name': name, 'id': person_id})
+                        try:
+                            # Extract and clean the name
+                            name = " ".join(a.get_text().split()) if a.get_text() else "Unknown"
+                            
+                            # Extract the href and handle missing or malformed href attributes
+                            href = a.get('href', '').split('?')[0]
+                            if not href:
+                                continue  # Skip if href is not available
+                            
+                            # Extract the ID safely
+                            id = href.split('/')[2] if len(href.split('/')) > 2 else "Unknown"
+
+                            # Append the name and ID
+                            names_and_ids.append({'name': name, 'id': id})
+                        except Exception as e:
+                            # Log or handle unexpected issues gracefully
+                            print(f"Error processing anchor tag: {a}, Error: {e}")
                     
                     # Add to credits
                     credits[credit_type].extend(names_and_ids)
