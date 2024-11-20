@@ -62,14 +62,7 @@ class MovieScrapper:
     def process_film_content(self, html_content):
         """
         // Movie
-        director -> data-testid="title-pc-principal-credit" -> SIBLING -> DIV
-        writer -> data-testid="title-pc-principal-credit" -> SIBLING -> DIV
-        genres -> data-testid="interests"
-
-        // Celeb
-        id
-        name
-        image
+        streaming -> data-testid="watchlist-button"
         """
 
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -86,6 +79,9 @@ class MovieScrapper:
         rating = None
         poster = None
         celeb_data = []
+        credits = {'Directors': [], 'Writers': []}
+        genres = []
+
         section = soup.find('section', {'data-testid': 'hero-parent'})
         if section:
             page_title_h1 = section.find('h1', {'data-testid': 'hero__pageTitle'})
@@ -149,14 +145,17 @@ class MovieScrapper:
         # Get Movie Director & Writer
         credit_elements = soup.find_all('li', {'data-testid': 'title-pc-principal-credit'})
 
-        # Initialize dictionaries for Director and Writer
-        credits = {'Director': [], 'Writers': []}
-
         # Get first two elements only
         for element in credit_elements[0:2]:
             span = element.find('span', class_='ipc-metadata-list-item__label')
-            if span and span.get_text(strip=True) in credits:
+            if span and span.get_text(strip=True):
                 credit_type = span.get_text(strip=True)
+
+                # If credit_type is Director or Directors, make it Directors same for Writers
+                if credit_type == 'Director':
+                    credit_type = 'Directors'
+                elif credit_type == 'Writer':
+                    credit_type = 'Writers'
 
                 content_div = element.find('div', class_='ipc-metadata-list-item__content-container')
                 if content_div:
@@ -185,6 +184,21 @@ class MovieScrapper:
                     # Add to credits
                     credits[credit_type].extend(names_and_ids)
                     
+        # Find the parent div with data-testid="interests"
+        genres_div = soup.find('div', {'data-testid': 'interests'})        
+
+        # Check if the parent div exists
+        if genres_div:
+            # Find the scroller div
+            scroller_div = genres_div.find('div', class_='ipc-chip-list__scroller')
+            
+            if scroller_div:
+                # Find all span elements with class 'ipc-chip__text'
+                span_elements = scroller_div.find_all('span', class_='ipc-chip__text')
+                
+                # Extract and clean the text from each span
+                genres = [span.get_text(strip=True) for span in span_elements]
+
         return {
             "name": name,
             "description": ' '.join(description.split()),
@@ -195,7 +209,8 @@ class MovieScrapper:
             "rating": rating,
             "poster": poster,
             "celebs": celeb_data,
-            "credits": credits
+            "credits": credits,
+            "genres": genres
         }
     
     def get_scrapped_data(self):

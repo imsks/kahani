@@ -155,7 +155,8 @@ class StreamingService(db.Model):
     __tablename__ = 'streaming_service' 
     
     id = db.Column(db.Integer, primary_key=True)
-    service = db.Column(db.String(80), unique=True, nullable=False)
+    name = db.Column(db.String(80), unique=True, nullable=False)
+    logo = db.Column(db.String(200))
     
     def store_streaming_service(self, service):
         try:
@@ -178,6 +179,7 @@ class MovieStreamingService(db.Model):
 
     movie_id = db.Column(db.String(10), db.ForeignKey('movie.id'), primary_key=True)
     service_id = db.Column(db.Integer, db.ForeignKey('streaming_service.id'), primary_key=True)
+    link = db.Column(db.String(200))
     
 class CelebRole(db.Model):
     __tablename__ = 'celeb_role' 
