@@ -109,7 +109,7 @@ class MovieScrapper:
                 rating = rating_span.get_text(strip=True)
 
         # Get Movie Poster
-        poster_div = soup.find('div', class_='ipc-media ipc-media--poster-27x40 ipc-image-media-ratio--poster-27x40 ipc-media--rounded ipc-media--baseAlt ipc-media--poster-l ipc-poster__poster-image ipc-media__img')
+        poster_div = soup.find('div', {"data-testid": 'hero-media__poster'})
         if poster_div:
             img_tag = poster_div.find('img')
             if img_tag:
@@ -132,7 +132,7 @@ class MovieScrapper:
                 # Extract celeb name and ID from the anchor tag
                 actor_tag = cast_item.find('a', {'data-testid': 'title-cast-item__actor'})
                 if actor_tag:
-                    celeb['name'] = actor_tag.get_text(strip=True)
+                    celeb['name'] = actor_tag.get_text()
                     
                     # Extract the ID from the href attribute
                     href = actor_tag['href']
@@ -165,7 +165,7 @@ class MovieScrapper:
                     for a in anchor_tags:
                         try:
                             # Extract and clean the name
-                            name = " ".join(a.get_text().split()) if a.get_text() else "Unknown"
+                            celeb_name = " ".join(a.get_text().split()) if a.get_text() else "Unknown"
                             
                             # Extract the href and handle missing or malformed href attributes
                             href = a.get('href', '').split('?')[0]
@@ -176,7 +176,7 @@ class MovieScrapper:
                             id = href.split('/')[2] if len(href.split('/')) > 2 else "Unknown"
 
                             # Append the name and ID
-                            names_and_ids.append({'name': name, 'id': id})
+                            names_and_ids.append({'name': celeb_name, 'id': id})
                         except Exception as e:
                             # Log or handle unexpected issues gracefully
                             print(f"Error processing anchor tag: {a}, Error: {e}")
@@ -256,14 +256,21 @@ class MovieScrapper:
         return None
     
     def get_hidef_image(self, img_tag):
+        # Extract the srcset attribute from the img tag
         srcset = img_tag.get('srcset', '')
-                
-        # Split srcSet by commas to get individual entries
+        
+        if not srcset:  # If srcset is missing or empty, return None
+            return None
+        
+        # Split srcset by commas to get individual entries
         srcset_items = srcset.split(', ')
         
-        # Take the last entry and split by space to get the URL part
+        # Ensure there are items to process
         if srcset_items:
-            poster = srcset_items[-1].split(' ')[0]
-            return poster
+            # Take the last entry, strip whitespace, and split to isolate the URL
+            all_items = srcset_items[-2].strip().split(' ')
+
+            if all_items:
+                return all_items[0]
         
         return None

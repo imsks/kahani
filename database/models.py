@@ -1,6 +1,6 @@
 import traceback
 from flask_sqlalchemy import SQLAlchemy
-from utils.contants import CelebRoles, SearchItemType
+from utils.contants import CelebRoles, CelebRoles
 from utils.functions import is_real_value
 
 db = SQLAlchemy()
@@ -93,8 +93,10 @@ class Movie(db.Model):
             # Store celeb data
             celeb_data_list = data.get("celebs", [])
             for celeb_data in celeb_data_list:
-                celeb = Celeb().store_celeb({**celeb_data, "type": SearchItemType.CELEB.value})
+                celeb = Celeb().store_celeb({**celeb_data, "type": CelebRoles.ACTOR.value})
                 if celeb:
+                    role_id = CelebRoles.ACTOR.value
+                    MovieCelebRole().store_movie_celeb_role(movie_id=movie.id, celeb_id=celeb.id, role_id=role_id)
                     movie.celebs.append(celeb)
 
             # Store genre data
@@ -102,7 +104,8 @@ class Movie(db.Model):
             for genre_data in genre_data_list:
                 genre = Genre().store_genre(genre_data)
                 if genre:
-                    movie.genres.append(genre)
+                    movie_genre = MovieGenre().store_movie_genre(movie.id, genre.id)
+                    db.session.add(movie_genre)
 
             # Store streaming service data
             streaming_service_data_list = data.get("streaming_on", [])
@@ -121,14 +124,15 @@ class Movie(db.Model):
 class Genre(db.Model):
     __tablename__ = 'genre' 
     
-    id = db.Column(db.Integer, primary_key=True)
-    genre = db.Column(db.String(80), unique=True, nullable=False)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    genre = db.Column(db.String(80), nullable=False)
     
-    def store_genre(self, genre):
+    def store_genre(self, genre_name):
         try:
-            genre = Genre.query.filter_by(genre=genre).first()
+            print("HERE", "genre", genre_name)
+            genre = Genre.query.filter_by(genre=genre_name).first()
             if not genre:
-                genre = Genre(genre=genre)
+                genre = Genre(genre=genre_name)
                 db.session.add(genre)
                 db.session.commit()
                 print(f"Stored genre: {genre}")
@@ -137,7 +141,7 @@ class Genre(db.Model):
                 print(f"Genre already exists")
                 return genre
         except Exception as e:
-            print(f"Error storing genre: {traceback.print_exc()}")
+            print(f"Error storing genre: {traceback.print_exc(), e}")
             return None
         
 class MovieGenre(db.Model):
@@ -149,6 +153,23 @@ class MovieGenre(db.Model):
     # Relationships with Movie and Genre
     movie = db.relationship('Movie', backref=db.backref('movie_genres', cascade='all, delete-orphan', overlaps="genres"))
     genre = db.relationship('Genre', backref=db.backref('movie_genres', cascade='all, delete-orphan', overlaps="genres"))
+
+    def store_movie_genre(self, movie_id, genre_id):
+        try:
+            movie_genre = MovieGenre.query.filter_by(movie_id=movie_id, genre_id=genre_id).first()
+
+            if not movie_genre:
+                movie_genre = MovieGenre(movie_id=movie_id, genre_id=genre_id)
+                db.session.add(movie_genre)
+                db.session.commit()
+                print(f"Stored movie_genre: {movie_genre}")
+                return movie_genre
+            else:
+                print(f"Movie Genre already exists")
+                return movie_genre
+        except Exception as e:
+            print(f"Error storing movie genre: {traceback.print_exc()}")
+            return None
         
 # Create a Streaming Service table
 class StreamingService(db.Model):
