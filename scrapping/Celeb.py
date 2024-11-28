@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from database.models import Movie, MovieCelebRole, Scrapped
+from database.models import Celeb, Movie, MovieCelebRole, Scrapped
 from utils.api import APIUtils
 from utils.contants import CelebRoles, SearchItemType
 from utils.functions import get_hidef_image
@@ -16,7 +16,7 @@ class CelebScrapper:
         celeb = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
-            "celeb_id": self.id,
+            "id": self.id,
             **celeb,
         }
     
@@ -47,6 +47,10 @@ class CelebScrapper:
         director_films = self.process_film_details(all_director_elements)
         actor_films = self.process_film_details(all_actor_elements)
 
+        try:
+            name = soup.find('span', {"data-testid": "hero__primary-text"}).text.strip()
+        except AttributeError:
+            name = ''
         image = ""
 
         # Display Picture
@@ -58,7 +62,6 @@ class CelebScrapper:
             if img_tag:
                 image = get_hidef_image(img_tag)
                     
-
         return {
             "filmography": {
                 "actor": actor_films,
@@ -66,7 +69,8 @@ class CelebScrapper:
                 "director": director_films,
                 "producer": producer_films
             },
-            "image": image
+            "image": image,
+            "name": name
         }
 
     # Process Film Details
@@ -131,7 +135,7 @@ class CelebScrapper:
 
         # 1. Store the scrapped data in the database
         # Store Data in Movies
-        celeb_id = scrapped_data.get('celeb_id')
+        id = scrapped_data.get('id')
         celeb_filmography = scrapped_data.get('filmography')
         
         role_to_enum = {
@@ -153,7 +157,15 @@ class CelebScrapper:
                 for movie in celeb_filmography[role]:
                     # Store the movie and its associated role
                     Movie().store_movie(movie)
-                    MovieCelebRole().store_movie_celeb_role(movie.get('id'), celeb_id, celeb_role_enum.value)
+                    MovieCelebRole().store_movie_celeb_role(movie.get('id'), id, celeb_role_enum.value)
+
+        # Store Celeb Image
+        celeb_data = {
+            "id": id,
+            "name": scrapped_data.get('name'),
+            "image": scrapped_data.get('image')
+        }
+        celeb = Celeb().store_celeb({**celeb_data, "type": CelebRoles.ACTOR.value})
 
         return scrapped_data
     

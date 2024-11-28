@@ -17,17 +17,15 @@ class Celeb(db.Model):
         if data["type"] not in [CelebRoles.ACTOR.value, CelebRoles.DIRECTOR.value, CelebRoles.WRITER.value]:
             return None
         
-        print("HERE", data)
-
         try:
             celeb = Celeb.query.filter_by(id=data["id"]).first()
             if not celeb:
                 celeb = Celeb(id=data.get('id'), name=data.get('name'), image=data.get('image'))
                 db.session.add(celeb)
 
-            if celeb.name == "" and is_real_value(data.get("name")):
+            if not celeb.name and is_real_value(data.get("name")):
                 celeb.name = data["name"]
-            elif celeb.image == "" and is_real_value(data.get("image")):
+            elif not celeb.image and is_real_value(data.get("image")):
                 celeb.image = data["image"]
                 
             db.session.commit()
@@ -71,19 +69,19 @@ class Movie(db.Model):
                 db.session.add(movie)
                 
             else:
-                if movie.type == "" and is_real_value(data.get("type")):
+                if not movie.type and is_real_value(data.get("type")):
                     movie.type = data["type"]
-                elif movie.rating == "" and is_real_value(data.get("rating")):
+                elif not movie.rating and is_real_value(data.get("rating")):
                     movie.rating = data["rating"]
-                elif movie.year == "" and is_real_value(data.get("year")):
+                elif not movie.year and is_real_value(data.get("year")):
                     movie.year = data["year"]
-                elif movie.link == "" and is_real_value(data.get("link")):
+                elif not movie.link and is_real_value(data.get("link")):
                     movie.link = data["link"]
-                elif movie.poster == "" and is_real_value(data.get("poster")):
+                elif not movie.poster and is_real_value(data.get("poster")):
                     movie.poster = data["poster"]
-                elif movie.description == "" and is_real_value(data.get("description")):
+                elif not movie.description and is_real_value(data.get("description")):
                     movie.description = data["description"]
-                elif movie.runtime == "" and is_real_value(data.get("runtime")):
+                elif not movie.runtime and is_real_value(data.get("runtime")):
                     movie.runtime = data["runtime"]
             
             # Store celeb data
@@ -106,13 +104,6 @@ class Movie(db.Model):
                 if genre:
                     MovieGenre().store_movie_genre(movie.id, genre.id)
                     # db.session.add(movie_genre)
-
-            # # Store streaming service data
-            # streaming_service_data_list = data.get("streaming_on", [])
-            # for streaming_service_data in streaming_service_data_list:
-            #     streaming_service = StreamingService().store_streaming_service(streaming_service_data)
-            #     if streaming_service:
-            #         movie.streaming_on.append(streaming_service)
             
             db.session.commit()
             print(f"Stored movie: {movie}")
