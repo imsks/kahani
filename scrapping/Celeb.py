@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 from database.models import Movie, MovieCelebRole, Scrapped
 from utils.api import APIUtils
 from utils.contants import CelebRoles, SearchItemType
+from utils.functions import get_hidef_image
+
 
 class CelebScrapper:
     def __init__(self, id, type):
@@ -11,11 +13,11 @@ class CelebScrapper:
     # Init Scrapping
     def init_scrapping(self):
         scrapped_celeb_details = self.scrape_celeb_details()
-        celeb_filmography = self.get_celeb_filmography(scrapped_celeb_details)
+        celeb = self.get_celeb_filmography(scrapped_celeb_details)
 
         return {
             "celeb_id": self.id,
-            "celeb_filmography": celeb_filmography,
+            **celeb,
         }
     
     # Build celeb URL
@@ -45,11 +47,26 @@ class CelebScrapper:
         director_films = self.process_film_details(all_director_elements)
         actor_films = self.process_film_details(all_actor_elements)
 
+        image = ""
+
+        # Display Picture
+        hero_container = soup.find('section', {"data-testid": 'hero-parent'})
+
+        if hero_container:
+            img_tag = hero_container.find('img', class_='ipc-image')
+
+            if img_tag:
+                image = get_hidef_image(img_tag)
+                    
+
         return {
-            "writer": writer_films,
-            "producer": producer_films,
-            "director": director_films,
-            "actor": actor_films
+            "filmography": {
+                "actor": actor_films,
+                "writer": writer_films,
+                "director": director_films,
+                "producer": producer_films
+            },
+            "image": image
         }
 
     # Process Film Details
@@ -115,7 +132,7 @@ class CelebScrapper:
         # 1. Store the scrapped data in the database
         # Store Data in Movies
         celeb_id = scrapped_data.get('celeb_id')
-        celeb_filmography = scrapped_data.get('celeb_filmography')
+        celeb_filmography = scrapped_data.get('filmography')
         
         role_to_enum = {
             'actor': CelebRoles.ACTOR,

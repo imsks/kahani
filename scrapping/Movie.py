@@ -1,9 +1,10 @@
 import os
 import re
 from bs4 import BeautifulSoup
-from database.models import Celeb, Movie, Scrapped
+from database.models import Movie, Scrapped
 from utils.api import APIUtils
 from utils.contants import CelebRoles
+from utils.functions import extract_year, extract_runtime, get_hidef_image
 
 class MovieScrapper:
     def __init__(self, id, type):
@@ -97,9 +98,9 @@ class MovieScrapper:
                     # Process each li element to extract year and runtime
                     for text in li_texts:
                         if not year:
-                            year = self.extract_year(text)
+                            year = extract_year(text)
                         elif not runtime:
-                            runtime = self.extract_runtime(text)
+                            runtime = extract_runtime(text)
         
         # Get Movie Rating
         rating_div = soup.find('div', {"data-testid": 'hero-rating-bar__aggregate-rating__score'})
@@ -127,7 +128,7 @@ class MovieScrapper:
                 # Extract image URL (last item in srcSet)
                 image_tag = cast_item.find('img', {'class': 'ipc-image'})
                 if image_tag and image_tag.has_attr('srcset'):
-                    celeb['image'] = self.get_hidef_image(image_tag)
+                    celeb['image'] = get_hidef_image(image_tag)
                 
                 # Extract celeb name and ID from the anchor tag
                 actor_tag = cast_item.find('a', {'data-testid': 'title-cast-item__actor'})
@@ -233,35 +234,3 @@ class MovieScrapper:
         
         # return scrapped_data
         return scrapped_data
-    
-    # Helper functions
-    def extract_year(self, text):
-        if text.isdigit() and len(text) == 4:
-            return text
-        return None
-
-    def extract_runtime(self, text):
-        # Check if the text has a time-related keyword (e.g., 'min')
-        if 'm' in text or 'h' in text:
-            return text
-        return None
-    
-    def get_hidef_image(self, img_tag):
-        # Extract the srcset attribute from the img tag
-        srcset = img_tag.get('srcset', '')
-        
-        if not srcset:  # If srcset is missing or empty, return None
-            return None
-        
-        # Split srcset by commas to get individual entries
-        srcset_items = srcset.split(', ')
-        
-        # Ensure there are items to process
-        if srcset_items:
-            # Take the last entry, strip whitespace, and split to isolate the URL
-            all_items = srcset_items[-2].strip().split(' ')
-
-            if all_items:
-                return all_items[0]
-        
-        return None

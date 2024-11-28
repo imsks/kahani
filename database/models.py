@@ -16,17 +16,19 @@ class Celeb(db.Model):
         # Check if type is in CelebRoles
         if data["type"] not in [CelebRoles.ACTOR.value, CelebRoles.DIRECTOR.value, CelebRoles.WRITER.value]:
             return None
+        
+        print("HERE", data)
 
         try:
             celeb = Celeb.query.filter_by(id=data["id"]).first()
             if not celeb:
                 celeb = Celeb(id=data.get('id'), name=data.get('name'), image=data.get('image'))
                 db.session.add(celeb)
-            else:
-                if celeb.name == "" and is_real_value(data.get("name")):
-                    celeb.name = data["name"]
-                elif celeb.image == "" and is_real_value(data.get("image")):
-                    celeb.image = data["image"]
+
+            if celeb.name == "" and is_real_value(data.get("name")):
+                celeb.name = data["name"]
+            elif celeb.image == "" and is_real_value(data.get("image")):
+                celeb.image = data["image"]
                 
             db.session.commit()
             print(f"Stored celeb: {celeb}")
