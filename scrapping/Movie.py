@@ -3,7 +3,7 @@ import re
 from bs4 import BeautifulSoup
 from database.models import Celeb, Movie, Scrapped
 from utils.api import APIUtils
-from utils.contants import SearchItemType
+from utils.contants import CelebRoles
 
 class MovieScrapper:
     def __init__(self, id, type):
@@ -78,8 +78,8 @@ class MovieScrapper:
         runtime = None
         rating = None
         poster = None
-        celeb_data = []
-        credits = {'Directors': [], 'Writers': []}
+        celebs = []
+        credits = {'directors': [], 'writers': []}
         genres = []
 
         section = soup.find('section', {'data-testid': 'hero-parent'})
@@ -117,7 +117,7 @@ class MovieScrapper:
 
         # Get Movie Cast
         cast_section = soup.find('section', {'data-testid': 'title-cast'})
-        # Process only the first five celeb items
+        # Process only the first five Actors items
         if cast_section:
             cast_items = cast_section.find_all('div', {'data-testid': 'title-cast-item'}, limit=5)
             
@@ -137,10 +137,11 @@ class MovieScrapper:
                     # Extract the ID from the href attribute
                     href = actor_tag['href']
                     celeb['id'] = href.split('/')[2] if '/name/' in href else None
+                    celeb['type'] = CelebRoles.ACTOR.value
 
                 # Add celeb info to list if all required data is present
                 if celeb:
-                    celeb_data.append(celeb)
+                    celebs.append(celeb)
 
         # Get Movie Director & Writer
         credit_elements = soup.find_all('li', {'data-testid': 'title-pc-principal-credit'})
@@ -152,10 +153,10 @@ class MovieScrapper:
                 credit_type = span.get_text(strip=True)
 
                 # If credit_type is Director or Directors, make it Directors same for Writers
-                if credit_type == 'Director':
-                    credit_type = 'Directors'
-                elif credit_type == 'Writer':
-                    credit_type = 'Writers'
+                if credit_type == 'Director' or credit_type == 'Directors':
+                    credit_type = 'directors'
+                elif credit_type == 'Writer' or credit_type == 'Writers':
+                    credit_type = 'writers'
 
                 content_div = element.find('div', class_='ipc-metadata-list-item__content-container')
                 if content_div:
@@ -208,7 +209,7 @@ class MovieScrapper:
             "type": self.type,
             "rating": rating,
             "poster": poster,
-            "celebs": celeb_data,
+            "celebs": celebs,
             "credits": credits,
             "genres": genres
         }
@@ -225,17 +226,7 @@ class MovieScrapper:
         # Store Data in Movies Model
         movie = {
             "id": self.id,
-            "name": scrapped_data.get('name'),
-            "description": scrapped_data.get('description'),
-            "year": scrapped_data.get('year'),
-            "runtime": scrapped_data.get('runtime'),
-            "link": scrapped_data.get('link'),
-            "type": scrapped_data.get('type'),
-            "rating": scrapped_data.get('rating'),
-            "poster": scrapped_data.get('poster'),
-            "credits": scrapped_data.get('credits'),
-            "genres": scrapped_data.get('genres'),
-            "celebs": scrapped_data.get('celebs')
+            **scrapped_data
         }
 
         Movie().store_movie(movie)

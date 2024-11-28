@@ -13,13 +13,14 @@ class Celeb(db.Model):
     image = db.Column(db.String(200))
 
     def store_celeb(self, data):
-        if data["type"] != "Celeb":
+        # Check if type is in CelebRoles
+        if data["type"] not in [CelebRoles.ACTOR.value, CelebRoles.DIRECTOR.value, CelebRoles.WRITER.value]:
             return None
 
         try:
             celeb = Celeb.query.filter_by(id=data["id"]).first()
             if not celeb:
-                celeb = Celeb(id=data["id"], name=data["name"], image=data["image"])
+                celeb = Celeb(id=data.get('id'), name=data.get('name'), image=data.get('image'))
                 db.session.add(celeb)
             else:
                 if celeb.name == "" and is_real_value(data.get("name")):
@@ -46,8 +47,6 @@ class Movie(db.Model):
     type = db.Column(db.String(10))
     rating = db.Column(db.Float)
     runtime = db.Column(db.String(80))
-    director = db.Column(db.String(80))
-    writer = db.Column(db.String(80))
     celebs = db.relationship('Celeb', secondary='movie_celeb_role', backref=db.backref('movies', lazy='dynamic'))
     genres = db.relationship('MovieGenre', back_populates='movie')
     streaming_on = db.relationship('StreamingService', secondary='movie_streaming_service', backref=db.backref('movies', lazy='dynamic'))
@@ -56,18 +55,17 @@ class Movie(db.Model):
         try:
             movie = Movie.query.filter_by(id=data["id"]).first()
             if not movie:
-                movie = Movie(id=data["id"], 
-                              name=data["name"], 
-                            )
-                movie.description = data.get("description")
-                movie.year = data.get("year")
-                movie.type = data.get("type")
-                movie.rating = data.get("rating")
-                movie.link = data.get("link")
-                movie.poster = data.get("poster")
-                movie.director = data.get("director")
-                movie.writer = data.get("writer")
-                movie.runtime = data.get("runtime")
+                movie = Movie(
+                    id=data.get("id"), 
+                    name=data.get("name"), 
+                    description=data.get("description"),
+                    year=data.get("year"),
+                    type=data.get("type"),
+                    rating=data.get("rating"),
+                    link=data.get("link"),
+                    poster=data.get("poster"),
+                    runtime = data.get("runtime")
+                )
                 db.session.add(movie)
                 
             else:
@@ -83,10 +81,6 @@ class Movie(db.Model):
                     movie.poster = data["poster"]
                 elif movie.description == "" and is_real_value(data.get("description")):
                     movie.description = data["description"]
-                elif movie.director == "" and is_real_value(data.get("director")):
-                    movie.director = data["director"]
-                elif movie.writer == "" and is_real_value(data.get("writer")):
-                    movie.writer = data["writer"]
                 elif movie.runtime == "" and is_real_value(data.get("runtime")):
                     movie.runtime = data["runtime"]
             
@@ -97,28 +91,49 @@ class Movie(db.Model):
                 if celeb:
                     role_id = CelebRoles.ACTOR.value
                     MovieCelebRole().store_movie_celeb_role(movie_id=movie.id, celeb_id=celeb.id, role_id=role_id)
-                    movie.celebs.append(celeb)
+                    # movie.celebs.append(celeb)
+
+            # Store Credits
+            credits = data.get("credits", {})
+            self.store_credits(movie.id, credits)
 
             # Store genre data
             genre_data_list = data.get("genres", [])
             for genre_data in genre_data_list:
                 genre = Genre().store_genre(genre_data)
                 if genre:
-                    movie_genre = MovieGenre().store_movie_genre(movie.id, genre.id)
-                    db.session.add(movie_genre)
+                    MovieGenre().store_movie_genre(movie.id, genre.id)
+                    # db.session.add(movie_genre)
 
-            # Store streaming service data
-            streaming_service_data_list = data.get("streaming_on", [])
-            for streaming_service_data in streaming_service_data_list:
-                streaming_service = StreamingService().store_streaming_service(streaming_service_data)
-                if streaming_service:
-                    movie.streaming_on.append(streaming_service)
+            # # Store streaming service data
+            # streaming_service_data_list = data.get("streaming_on", [])
+            # for streaming_service_data in streaming_service_data_list:
+            #     streaming_service = StreamingService().store_streaming_service(streaming_service_data)
+            #     if streaming_service:
+            #         movie.streaming_on.append(streaming_service)
             
             db.session.commit()
             print(f"Stored movie: {movie}")
             return movie
         except Exception as e:
             print(traceback.print_exc())
+            return None
+        
+    def store_credits(self, movie_id, credits):
+        try:
+            if credits.get('directors'):
+                for director in credits['directors']:
+                    celeb = Celeb().store_celeb({**director, "type": CelebRoles.DIRECTOR.value})
+                    print("HERE", celeb)
+                    
+                    MovieCelebRole().store_movie_celeb_role(movie_id=movie_id, celeb_id=celeb.id, role_id=CelebRoles.DIRECTOR.value)
+            if credits.get('writers'):
+                for writer in credits['writers']:
+                    celeb = Celeb().store_celeb({**writer, "type": CelebRoles.WRITER.value})
+                    MovieCelebRole().store_movie_celeb_role(movie_id=movie_id, celeb_id=celeb.id, role_id=CelebRoles.WRITER.value)
+            print(f"Stored credits for movie_id: {movie_id}")
+        except Exception as e:
+            print(f"Error storing credits: {traceback.print_exc(), e}")
             return None
         
 class Genre(db.Model):
