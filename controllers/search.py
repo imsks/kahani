@@ -98,6 +98,4 @@ class SearchIMDB:
                     }
                 )
 
-        # scraped_celeb_details = ScrapeCeleb().init_scrapping(mapped_query_suggestions[0]['id'])
-
         return mapped_query_suggestions

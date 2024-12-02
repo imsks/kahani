@@ -1,6 +1,6 @@
 import traceback
 from flask_sqlalchemy import SQLAlchemy
-from utils.contants import CelebRoles, CelebRoles
+from utils.contants import CelebRoles, CelebRoles, SearchItemType
 from utils.functions import is_real_value
 
 db = SQLAlchemy()
@@ -34,6 +34,17 @@ class Celeb(db.Model):
         except Exception as e:
             print(traceback.print_exc())
             return None
+        
+    def get_celeb(self, id):
+        celeb = Celeb.query.filter_by(id=id).first()
+        return celeb.to_dict()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'image': self.image
+        }
 
 class Movie(db.Model):
     __tablename__ = 'movie' 
@@ -117,8 +128,6 @@ class Movie(db.Model):
             if credits.get('directors'):
                 for director in credits['directors']:
                     celeb = Celeb().store_celeb({**director, "type": CelebRoles.DIRECTOR.value})
-                    print("HERE", celeb)
-                    
                     MovieCelebRole().store_movie_celeb_role(movie_id=movie_id, celeb_id=celeb.id, role_id=CelebRoles.DIRECTOR.value)
             if credits.get('writers'):
                 for writer in credits['writers']:
@@ -128,6 +137,41 @@ class Movie(db.Model):
         except Exception as e:
             print(f"Error storing credits: {traceback.print_exc(), e}")
             return None
+    
+    def get_movie(self, id):
+        movie = Movie.query.filter_by(id=id).first()
+        return movie.to_dict()
+    
+    def to_dict(self):
+        celebs_list = []
+        credits = {'directors': [], 'writers': []}
+
+        movie_celeb_roles = MovieCelebRole.query.filter_by(movie_id=self.id).all()
+        for movie_celeb_role in movie_celeb_roles:
+            celeb = Celeb.query.filter_by(id=movie_celeb_role.celeb_id).first()
+            role = CelebRole.query.filter_by(id=movie_celeb_role.role_id).first().to_dict().get('role')
+
+            if role == CelebRoles.ACTOR.value:
+                celebs_list.append(celeb.to_dict())
+            elif role == CelebRoles.DIRECTOR.value:
+                credits['directors'].append({'id': celeb.id, 'name': celeb.name})
+            elif role == CelebRoles.WRITER.value:
+                credits['writers'].append({'id': celeb.id, 'name': celeb.name})
+
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'year': self.year,
+            'link': self.link,
+            'poster': self.poster,
+            'type': self.type,
+            'rating': self.rating,
+            'runtime': self.runtime,
+            'celebs': celebs_list,
+            'credits': credits,
+            'genres': [genre.genre.genre for genre in self.genres],
+        }
         
 class Genre(db.Model):
     __tablename__ = 'genre' 
@@ -137,7 +181,6 @@ class Genre(db.Model):
     
     def store_genre(self, genre_name):
         try:
-            print("HERE", "genre", genre_name)
             genre = Genre.query.filter_by(genre=genre_name).first()
             if not genre:
                 genre = Genre(genre=genre_name)
@@ -151,6 +194,16 @@ class Genre(db.Model):
         except Exception as e:
             print(f"Error storing genre: {traceback.print_exc(), e}")
             return None
+        
+    def get_genre(self, genre_name):
+        genre = Genre.query.filter_by(genre=genre_name).first()
+        return genre.to_dict()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'genre': self.genre
+        }
         
 class MovieGenre(db.Model):
     __tablename__ = 'movie_genre'
@@ -178,6 +231,12 @@ class MovieGenre(db.Model):
         except Exception as e:
             print(f"Error storing movie genre: {traceback.print_exc()}")
             return None
+        
+    def to_dict(self):
+        return {
+            'movie_id': self.movie_id,
+            'genre_id': self.genre_id
+        }
         
 # Create a Streaming Service table
 class StreamingService(db.Model):
@@ -216,13 +275,19 @@ class CelebRole(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.Enum(CelebRoles), unique=True, nullable=False)
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'role': self.role.value
+        }
+
 class MovieCelebRole(db.Model):
     __tablename__ = 'movie_celeb_role'
 
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
     celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
     role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
-
+    
     def store_movie_celeb_role(self, movie_id, celeb_id, role_id):
         try:
             movie_celeb_role = MovieCelebRole.query.filter_by(movie_id=movie_id, celeb_id=celeb_id, role_id=role_id).first()
@@ -240,6 +305,13 @@ class MovieCelebRole(db.Model):
         except Exception as e:
             print(f"Error storing movie celeb role: {traceback.print_exc()}")
             return None
+        
+    def to_dict(self):
+        return {
+            'movie_id': self.movie_id,
+            'celeb_id': self.celeb_id,
+            'role_id': self.role_id
+        }
         
 class Scrapped(db.Model):
     __tablename__ = 'scrapped' 
@@ -271,3 +343,15 @@ class Scrapped(db.Model):
     def get_scrapped(self, id):
         scrapped = Scrapped.query.filter_by(id=id).first()
         return scrapped
+    
+    def is_scrapped(self, id, type):
+        return Scrapped.query.filter_by(id=id, type=type).first() is not None
+    
+    def get_scrapped_data(self, id, type):
+        if type == SearchItemType.CELEB.value:
+            celeb = Celeb().get_celeb(id)
+            return celeb
+        elif type == SearchItemType.MOVIE.value:
+            movie = Movie().get_movie(id)
+            return movie
+        return None
