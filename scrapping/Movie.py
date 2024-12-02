@@ -1,5 +1,4 @@
 import os
-import re
 from bs4 import BeautifulSoup
 from database.models import Movie, Scrapped
 from utils.api import APIUtils
@@ -114,7 +113,7 @@ class MovieScrapper:
         if poster_div:
             img_tag = poster_div.find('img')
             if img_tag:
-                poster = self.get_hidef_image(img_tag)
+                poster = get_hidef_image(img_tag)
 
         # Get Movie Cast
         cast_section = soup.find('section', {'data-testid': 'title-cast'})

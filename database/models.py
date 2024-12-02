@@ -66,7 +66,6 @@ class Movie(db.Model):
                     poster=data.get("poster"),
                     runtime = data.get("runtime")
                 )
-                db.session.add(movie)
                 
             else:
                 if not movie.type and is_real_value(data.get("type")):
@@ -105,6 +104,7 @@ class Movie(db.Model):
                     MovieGenre().store_movie_genre(movie.id, genre.id)
                     # db.session.add(movie_genre)
             
+            db.session.add(movie)
             db.session.commit()
             print(f"Stored movie: {movie}")
             return movie

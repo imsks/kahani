@@ -4,7 +4,6 @@ from utils.api import APIUtils
 from utils.contants import CelebRoles, SearchItemType
 from utils.functions import get_hidef_image
 
-
 class CelebScrapper:
     def __init__(self, id, type):
         self.id = id
