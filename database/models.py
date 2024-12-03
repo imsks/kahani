@@ -8,7 +8,7 @@ db = SQLAlchemy()
 class Celeb(db.Model):
     __tablename__ = 'celeb'
 
-    id = db.Column(db.String(10), primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     image = db.Column(db.String(200))
 
@@ -49,7 +49,7 @@ class Celeb(db.Model):
 class Movie(db.Model):
     __tablename__ = 'movie' 
 
-    id = db.Column(db.String(10), primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     name = db.Column(db.String(80), nullable=False, unique=False)
     description = db.Column(db.String(600))
     year = db.Column(db.Integer)
@@ -272,7 +272,7 @@ class MovieStreamingService(db.Model):
 class CelebRole(db.Model):
     __tablename__ = 'celeb_role' 
     
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.String(80), primary_key=True)
     role = db.Column(db.Enum(CelebRoles), unique=True, nullable=False)
 
     def to_dict(self):
@@ -284,9 +284,9 @@ class CelebRole(db.Model):
 class MovieCelebRole(db.Model):
     __tablename__ = 'movie_celeb_role'
 
-    movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'), primary_key=True)
-    celeb_id = db.Column(db.Integer, db.ForeignKey('celeb.id'), primary_key=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
+    movie_id = db.Column(db.String(80), db.ForeignKey('movie.id'), primary_key=True)
+    celeb_id = db.Column(db.String(80), db.ForeignKey('celeb.id'), primary_key=True)
+    role_id = db.Column(db.String(80), db.ForeignKey('celeb_role.id'), primary_key=True)
     
     def store_movie_celeb_role(self, movie_id, celeb_id, role_id):
         try:

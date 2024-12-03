@@ -2,12 +2,31 @@ import traceback
 from sqlalchemy import inspect
 from database.models import Celeb, CelebRole, Genre, Movie, MovieCelebRole, MovieGenre, MovieStreamingService, Scrapped, StreamingService
 from utils.contants import CelebRoles
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 class PopulateDB:
-    def __init__(self, db):
+    def __init__(self, db, DATABASE_URL):
         self.db = db
+        self.DATABASE_URL = DATABASE_URL
+
+    def create_database(self):
+        db_url_parts = self.DATABASE_URL.split('/')
+        db_name = db_url_parts[-1]
+        db_url_without_db = '/'.join(db_url_parts[:-1])
+
+        conn = psycopg2.connect(db_url_without_db)
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT 1 FROM pg_database WHERE datname='{db_name}'")
+        exists = cursor.fetchone()
+        if not exists:
+            cursor.execute(f'CREATE DATABASE {db_name}')
+        cursor.close()
+        conn.close()
 
     def init_populate(self):
+        self.create_database()
         self.create_tables([
             Movie, 
             Celeb, 

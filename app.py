@@ -8,7 +8,7 @@ from routes.search import SearchRoutes
 
 app = Flask(__name__)
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost/kahani_local'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@db:5432/kahani_local'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -34,7 +34,7 @@ def init_db():
         migrate.init_app(app, db)
         print("Database initialized")
 
-        populate = PopulateDB(db)
+        populate = PopulateDB(db, app.config['SQLALCHEMY_DATABASE_URI'])
         populate.init_populate()
         print("Database populated")
         

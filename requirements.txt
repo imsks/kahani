@@ -3,4 +3,5 @@ Flask-SQLAlchemy
 bs4
 requests
 Flask-Migrate
-psycopg2-binary
+# psycopg2-binary
+psycopg2
