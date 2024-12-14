@@ -283,15 +283,18 @@ class MovieCelebRole(db.Model):
 
     movie_id = db.Column(db.String(80), db.ForeignKey('movie.id'), primary_key=True)
     celeb_id = db.Column(db.String(80), db.ForeignKey('celeb.id'), primary_key=True)
-    role_id = db.Column(db.String(80), db.ForeignKey('celeb_role.id'), primary_key=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('celeb_role.id'), primary_key=True)
     
     def store_movie_celeb_role(self, movie_id, celeb_id, role_id):
         try:
             movie_celeb_role = MovieCelebRole.query.filter_by(movie_id=movie_id, celeb_id=celeb_id, role_id=role_id).first()
 
             if not movie_celeb_role:
-                movie_celeb_role = MovieCelebRole(movie_id=movie_id, celeb_id=celeb_id
-                                                    , role_id=role_id)
+                movie_celeb_role = MovieCelebRole(
+                    movie_id=movie_id,
+                    celeb_id=celeb_id,
+                    role_id=role_id
+                )
                 db.session.add(movie_celeb_role)
                 db.session.commit()
                 print(f"Stored movie_celeb_role: {movie_celeb_role}")

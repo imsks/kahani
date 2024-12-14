@@ -5,7 +5,6 @@ from utils.api import APIUtils
 from utils.contants import SearchItemType
 from database.models import Scrapped
 
-
 def scrape():
     try:
         data = request.get_json()
