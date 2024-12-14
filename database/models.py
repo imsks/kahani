@@ -13,12 +13,9 @@ class Celeb(db.Model):
     image = db.Column(db.String(200))
 
     def store_celeb(self, data):
-        # Check if type is in CelebRoles
-        if data["type"] not in [CelebRoles.ACTOR.value, CelebRoles.DIRECTOR.value, CelebRoles.WRITER.value]:
-            return None
-        
         try:
             celeb = Celeb.query.filter_by(id=data["id"]).first()
+            
             if not celeb:
                 celeb = Celeb(id=data.get('id'), name=data.get('name'), image=data.get('image'))
                 db.session.add(celeb)
