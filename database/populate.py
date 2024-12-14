@@ -53,7 +53,7 @@ class PopulateDB:
             return
 
         for role in CelebRoles:
-            new_role = CelebRole(role=role)
+            new_role = CelebRole(id=role.value, role=role.name)
             self.db.session.add(new_role)
 
         self.db.session.commit()

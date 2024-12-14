@@ -8,7 +8,7 @@ services:
         volumes:
             - .:/app
         environment:
-            - DATABASE_URL=postgresql://postgres:postgres@db:5432/kahani_local
+            - DATABASE_URL=postgresql://postgres:postgres@db:5432/kahani_db
         depends_on:
             - db
 
@@ -17,7 +17,7 @@ services:
         environment:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: postgres
-            POSTGRES_DB: kahani_local
+            POSTGRES_DB: kahani_db
         volumes:
             - postgres_data:/var/lib/postgresql/data
 

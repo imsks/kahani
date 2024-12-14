@@ -4,6 +4,7 @@
 
     ```sql
     psql -h hostname -d databasename -U username -W
+    psql -U postgres -d kahani_db
     ```
 
     -h: hostname of the machine where the database is running
@@ -40,6 +41,12 @@
 
     ```sql
     \c <db_name>
+    ```
+
+## List all tables in the current database:
+
+    ```sql
+    \dt
     ```
 
 ### Looking inside a table
