@@ -164,7 +164,8 @@ class CelebScrapper:
             "name": scrapped_data.get('name'),
             "image": scrapped_data.get('image')
         }
-        celeb = Celeb().store_celeb({**celeb_data, "type": CelebRoles.ACTOR.value})
+        
+        Celeb().store_celeb({**celeb_data, "type": CelebRoles.ACTOR.value})
 
         return scrapped_data
     

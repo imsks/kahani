@@ -355,3 +355,55 @@ class Scrapped(db.Model):
             movie = Movie().get_movie(id)
             return movie
         return None
+    
+class User(db.Model):
+    __tablename__ = 'user'
+
+    id = db.Column(db.String(80), primary_key=True)
+    name = db.Column(db.String(80), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    image = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=db.func.now())
+    
+    def store_user(self, data):
+        id = data.get("id")
+        name = data.get("name")
+        email = data.get("email")
+        image = data.get("image")
+
+        try:
+            user = User.query.filter_by(email=email).first()
+            if not user:
+                user = User(id=id, name=name, email=email, image=image)
+                db.session.add(user)
+                db.session.commit()
+                print(f"Stored user: {user}")
+            else:
+                user.id = id
+                user.name = name
+                user.image = image
+                db.session.commit()
+                print(f"Updated user: {user}")
+            return user.to_dict()
+        except Exception as e:
+            print(f"Error storing user: {e} {traceback.print_exc()}")
+            return None
+        
+    def get_user(self, id):
+        user = User.query.filter_by(id=id).first()
+        return user.to_dict()
+    
+    def get_user_by_email(self, email):
+        user = User.query.filter_by(email=email).first()
+        if user:
+            return user.to_dict()
+        return None
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'email': self.email,
+            'image': self.image
+        }

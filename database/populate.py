@@ -1,6 +1,6 @@
 import traceback
 from sqlalchemy import inspect
-from database.models import Celeb, CelebRole, Genre, Movie, MovieCelebRole, MovieGenre, MovieStreamingService, Scrapped, StreamingService
+from database.models import Celeb, CelebRole, Genre, Movie, MovieCelebRole, MovieGenre, MovieStreamingService, Scrapped, StreamingService, User
 from utils.contants import CelebRoles
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
@@ -37,6 +37,7 @@ class PopulateDB:
             MovieGenre,
             StreamingService,
             MovieStreamingService,
+            User
         ])
         self.populate_celeb_role()
 
@@ -58,7 +59,6 @@ class PopulateDB:
 
         self.db.session.commit()
         print("CelebRole table populated successfully!")
-
 
     def create_tables(self, models):
         try:

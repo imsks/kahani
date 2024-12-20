@@ -4,13 +4,16 @@ import json
 
 class APIUtils:
     # Generate Response
-    def generate_response(status = True, data = None, message = None, error = None, status_code = 200):
-        return jsonify({
+    def generate_response(status=True, data=None, message=None, error=None, status_code=200):
+        response = {
             "status": status,
             "data": data,
             "message": message,
             "error": error
-        }), status_code
+        }
+        # Remove keys with None values
+        response = {k: v for k, v in response.items() if v is not None}
+        return jsonify(response), status_code
     
     # Call the API
     def make_api(url):

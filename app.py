@@ -5,6 +5,7 @@ from database.models import db
 from database.populate import PopulateDB
 from routes.scrape import scrape
 from routes.search import SearchRoutes
+from routes.auth import auth
 
 app = Flask(__name__)
 
@@ -27,6 +28,7 @@ def search():
         return jsonify({"error": str(e)})
     
 app.route('/scrape', methods=['POST'])(scrape)
+app.route('/auth', methods=['POST', 'GET'])(auth)
 
 # Initialize the database
 def init_db():
